@@ -221,11 +221,9 @@ set public = excluded.public,
     file_size_limit = excluded.file_size_limit,
     allowed_mime_types = excluded.allowed_mime_types;
 
-grant select on storage.objects to anon, authenticated;
-grant insert on storage.objects to authenticated;
-revoke update, delete on storage.objects from anon, authenticated;
-
-alter table storage.objects enable row level security;
+-- `storage.objects` is owned by Supabase's storage role in hosted projects.
+-- Its RLS is already enabled; project migrations may create policies but must not
+-- alter table ownership settings or grants on this system-managed table.
 
 create policy "owner uploads post images"
 on storage.objects for insert to authenticated
