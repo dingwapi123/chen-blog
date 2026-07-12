@@ -19,6 +19,7 @@ export default defineNuxtConfig({
   },
   sitemap: {
     autoI18n: false,
+    sources: ['/api/__sitemap__/urls'],
   },
   app: {
     head: {
