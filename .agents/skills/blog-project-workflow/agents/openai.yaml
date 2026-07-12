@@ -1,0 +1,4 @@
+interface:
+  display_name: "Blog Project Workflow"
+  short_description: "Plan and implement the Chen Blog monorepo safely."
+  default_prompt: "Use $blog-project-workflow to implement the next Chen Blog milestone."

@@ -1,0 +1,2 @@
+-- Add local RLS regression tests here after the first migration.
+-- Cover anonymous public reads, owner writes, direct publish denial and no physical post delete.

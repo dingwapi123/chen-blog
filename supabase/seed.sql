@@ -1,0 +1,3 @@
+-- V1.0.0 intentionally has no seeded owner.
+-- Create the Auth user through Supabase Dashboard, then insert its UID into profiles
+-- using a controlled administrative SQL session.

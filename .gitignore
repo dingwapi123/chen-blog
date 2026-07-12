@@ -1,0 +1,22 @@
+# Dependencies and package-manager state
+node_modules/
+
+# Build output
+.nuxt/
+.output/
+.data/
+.nitro/
+.cache/
+dist/
+coverage/
+
+# Local configuration and operating-system files
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+
+# Supabase local state
+supabase/.branches/
+supabase/.temp/

@@ -1,0 +1,21 @@
+{
+  "name": "chen-blog",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.29.1",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "dev:blog": "pnpm --filter @chen-blog/blog-web dev",
+    "dev:cms": "pnpm --filter @chen-blog/cms-admin dev",
+    "lint": "eslint .",
+    "typecheck": "pnpm -r --if-present typecheck"
+  },
+  "devDependencies": {
+    "eslint": "^10.0.0"
+  }
+}
