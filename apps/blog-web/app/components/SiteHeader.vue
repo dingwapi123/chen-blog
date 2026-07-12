@@ -35,15 +35,15 @@ const links = [
 </template>
 
 <style scoped>
-.site-header { position: sticky; z-index: 10; top: 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent); background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); }
+.site-header { position: sticky; z-index: 10; top: 0; background: color-mix(in srgb, var(--surface-container) 80%, transparent); backdrop-filter: blur(20px); }
 .site-header__inner { display: flex; min-height: 4.45rem; align-items: center; justify-content: space-between; }
 .site-brand { font-size: 0.95rem; font-weight: 750; letter-spacing: -0.03em; }
 .desktop-nav, .mobile-actions { display: flex; align-items: center; gap: var(--space-md); }
 .nav-link { color: var(--text-muted); font-size: 0.9rem; }
 .nav-link:hover, .nav-link.router-link-active { color: var(--text); }
-.menu-button { display: inline-grid; width: 2.35rem; height: 2.35rem; place-items: center; border: 1px solid var(--border); border-radius: 0.55rem; color: var(--text); background: transparent; }
+.menu-button { display: inline-grid; width: 2.35rem; height: 2.35rem; place-items: center; border: 0; border-radius: 0.375rem; color: var(--text); background: var(--surface-high); }
 .mobile-nav { display: grid; padding-block: var(--space-sm) var(--space-md); }
-.mobile-nav__link { padding-block: var(--space-sm); border-top: 1px solid var(--border); font-weight: 650; }
+.mobile-nav__link { padding: var(--space-sm); border-radius: 0.375rem; font-weight: 650; }.mobile-nav__link:hover { background: var(--surface-low); }
 .mobile-actions, .mobile-nav { display: none; }
 @media (max-width: 640px) { .desktop-nav { display: none; } .mobile-actions, .mobile-nav { display: flex; } .mobile-nav { flex-direction: column; } }
 </style>

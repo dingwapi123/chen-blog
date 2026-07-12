@@ -18,7 +18,7 @@ import { site } from '~/config/site'
 </template>
 
 <style scoped>
-.site-footer { margin-top: auto; border-top: 1px solid var(--border); }
+.site-footer { margin-top: auto; background: var(--surface-low); }
 .site-footer__inner { display: flex; align-items: end; justify-content: space-between; gap: var(--space-lg); padding-block: var(--space-xl); }
 .site-footer__name, .site-footer__note { margin: 0; }
 .site-footer__name { font-weight: 700; }

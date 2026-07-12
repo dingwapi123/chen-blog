@@ -1,18 +1,30 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #f7f5f0;
-  --bg-soft: #eeece6;
-  --bg-elevated: #fffdf9;
-  --text: #1f1f1d;
-  --text-muted: #61615d;
-  --text-faint: #8b8881;
-  --border: #ddd6ca;
-  --border-strong: #c9c1b4;
+  --surface: #f7f5f0;
+  --surface-low: #eeece6;
+  --surface-container: #f3f0e9;
+  --surface-high: #e8e5dd;
+  --surface-highest: #ded9cf;
+  --surface-elevated: #fffdf9;
+  --on-surface: #1f1f1d;
+  --on-surface-muted: #61615d;
+  --on-surface-faint: #8b8881;
   --accent: #0f8a5f;
   --accent-hover: #0c7752;
   --accent-soft: #d8f2e7;
-  --code-bg: #ebe8e1;
+  --code-surface: #232826;
+  --code-on-surface: #f5f7f6;
+  --outline-ghost: color-mix(in srgb, #1f1f1d 15%, transparent);
+  --bg: var(--surface);
+  --bg-soft: var(--surface-low);
+  --bg-elevated: var(--surface-elevated);
+  --text: var(--on-surface);
+  --text-muted: var(--on-surface-muted);
+  --text-faint: var(--on-surface-faint);
+  --border: var(--outline-ghost);
+  --border-strong: var(--outline-ghost);
+  --code-bg: var(--code-surface);
   --font-ui: "Avenir Next", "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-reading: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
   --font-code: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
@@ -28,34 +40,40 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    --bg: #171b1e;
-    --bg-soft: #1e2528;
-    --bg-elevated: #252d30;
-    --text: #ece9e2;
-    --text-muted: #b1aea8;
-    --text-faint: #7d8586;
-    --border: #34393e;
-    --border-strong: #4a5356;
+    --surface: #171b1e;
+    --surface-low: #1e2528;
+    --surface-container: #21282b;
+    --surface-high: #2a3235;
+    --surface-highest: #343d40;
+    --surface-elevated: #252d30;
+    --on-surface: #ece9e2;
+    --on-surface-muted: #b1aea8;
+    --on-surface-faint: #7d8586;
     --accent: #45c597;
     --accent-hover: #58d5aa;
     --accent-soft: #103b2e;
-    --code-bg: #101517;
+    --code-surface: #0e1314;
+    --code-on-surface: #f5f7f6;
+    --outline-ghost: color-mix(in srgb, #ece9e2 15%, transparent);
   }
 }
 
 :root[data-theme="dark"] {
-  --bg: #171b1e;
-  --bg-soft: #1e2528;
-  --bg-elevated: #252d30;
-  --text: #ece9e2;
-  --text-muted: #b1aea8;
-  --text-faint: #7d8586;
-  --border: #34393e;
-  --border-strong: #4a5356;
+  --surface: #171b1e;
+  --surface-low: #1e2528;
+  --surface-container: #21282b;
+  --surface-high: #2a3235;
+  --surface-highest: #343d40;
+  --surface-elevated: #252d30;
+  --on-surface: #ece9e2;
+  --on-surface-muted: #b1aea8;
+  --on-surface-faint: #7d8586;
   --accent: #45c597;
   --accent-hover: #58d5aa;
   --accent-soft: #103b2e;
-  --code-bg: #101517;
+  --code-surface: #0e1314;
+  --code-on-surface: #f5f7f6;
+  --outline-ghost: color-mix(in srgb, #ece9e2 15%, transparent);
 }
 
 * { box-sizing: border-box; }
@@ -88,8 +106,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .page-section { padding-block: var(--space-2xl); }
 .eyebrow { color: var(--accent); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
 .muted { color: var(--text-muted); }
-.display-title { margin: 0; max-width: 14ch; font-size: clamp(3.25rem, 9vw, 7.25rem); font-weight: 600; letter-spacing: -0.06em; line-height: 0.96; }
-.section-title { margin: 0; font-size: clamp(1.8rem, 3vw, 2.75rem); letter-spacing: -0.04em; line-height: 1.1; }
+.display-title { margin: 0; max-width: 14ch; font-family: var(--font-reading); font-size: clamp(3.5rem, 9vw, 7.25rem); font-weight: 600; letter-spacing: -0.04em; line-height: 0.96; }
+.section-title { margin: 0; font-family: var(--font-reading); font-size: clamp(1.9rem, 3vw, 2.75rem); letter-spacing: -0.04em; line-height: 1.1; }
 .text-link { color: var(--accent); font-weight: 650; }
 .text-link:hover { color: var(--accent-hover); }
 
