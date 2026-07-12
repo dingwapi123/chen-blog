@@ -1,0 +1,49 @@
+<script setup lang="ts">
+import { Menu, X } from 'lucide-vue-next'
+import { shallowRef } from 'vue'
+import { site } from '~/config/site'
+
+const isMenuOpen = shallowRef(false)
+const links = [
+  { label: '文章', to: '/posts' },
+  { label: '关于', to: '/about' },
+]
+</script>
+
+<template>
+  <header class="site-header">
+    <div class="site-header__inner page-shell">
+      <NuxtLink class="site-brand" to="/" @click="isMenuOpen = false">
+        <span>{{ site.shortName }}</span>
+      </NuxtLink>
+      <nav class="desktop-nav" aria-label="主导航">
+        <NuxtLink v-for="link in links" :key="link.to" class="nav-link" :to="link.to">{{ link.label }}</NuxtLink>
+        <ThemeToggle />
+      </nav>
+      <div class="mobile-actions">
+        <ThemeToggle />
+        <button class="menu-button" type="button" :aria-expanded="isMenuOpen" aria-label="切换导航菜单" @click="isMenuOpen = !isMenuOpen">
+          <X v-if="isMenuOpen" :size="20" aria-hidden="true" />
+          <Menu v-else :size="20" aria-hidden="true" />
+        </button>
+      </div>
+    </div>
+    <nav v-if="isMenuOpen" class="mobile-nav page-shell" aria-label="移动端主导航">
+      <NuxtLink v-for="link in links" :key="link.to" class="mobile-nav__link" :to="link.to" @click="isMenuOpen = false">{{ link.label }}</NuxtLink>
+    </nav>
+  </header>
+</template>
+
+<style scoped>
+.site-header { position: sticky; z-index: 10; top: 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent); background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); }
+.site-header__inner { display: flex; min-height: 4.45rem; align-items: center; justify-content: space-between; }
+.site-brand { font-size: 0.95rem; font-weight: 750; letter-spacing: -0.03em; }
+.desktop-nav, .mobile-actions { display: flex; align-items: center; gap: var(--space-md); }
+.nav-link { color: var(--text-muted); font-size: 0.9rem; }
+.nav-link:hover, .nav-link.router-link-active { color: var(--text); }
+.menu-button { display: inline-grid; width: 2.35rem; height: 2.35rem; place-items: center; border: 1px solid var(--border); border-radius: 0.55rem; color: var(--text); background: transparent; }
+.mobile-nav { display: grid; padding-block: var(--space-sm) var(--space-md); }
+.mobile-nav__link { padding-block: var(--space-sm); border-top: 1px solid var(--border); font-weight: 650; }
+.mobile-actions, .mobile-nav { display: none; }
+@media (max-width: 640px) { .desktop-nav { display: none; } .mobile-actions, .mobile-nav { display: flex; } .mobile-nav { flex-direction: column; } }
+</style>

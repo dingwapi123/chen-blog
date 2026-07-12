@@ -13,7 +13,9 @@
     "dev:blog": "pnpm --filter @chen-blog/blog-web dev",
     "dev:cms": "pnpm --filter @chen-blog/cms-admin dev",
     "lint": "eslint .",
-    "typecheck": "pnpm -r --if-present typecheck"
+    "typecheck": "pnpm -r --if-present typecheck",
+    "db:test": "supabase test db --local supabase/tests",
+    "db:types": "supabase gen types typescript --local > packages/database-types/src/index.ts"
   },
   "devDependencies": {
     "eslint": "^10.0.0"

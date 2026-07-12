@@ -10,13 +10,24 @@
     "typecheck": "vue-tsc -b --pretty false"
   },
   "dependencies": {
+    "@chen-blog/markdown": "workspace:*",
+    "@chen-blog/shared-types": "workspace:*",
+    "@chen-blog/shared-utils": "workspace:*",
+    "@shikijs/markdown-it": "^4.3.1",
     "@supabase/supabase-js": "^2.0.0",
-    "vue": "^3.5.39"
+    "@tailwindcss/vite": "^4.3.2",
+    "lucide-vue-next": "^1.0.0",
+    "markdown-it": "^14.3.0",
+    "shiki": "^4.3.1",
+    "vue": "^3.5.39",
+    "vue-router": "^5.1.0"
   },
   "devDependencies": {
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "^24.13.2",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vue/tsconfig": "^0.9.1",
+    "tailwindcss": "^4.3.2",
     "typescript": "~6.0.2",
     "vite": "^8.1.1",
     "vue-tsc": "^3.3.5"

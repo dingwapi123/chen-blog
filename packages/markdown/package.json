@@ -5,5 +5,13 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@shikijs/markdown-it": "^4.3.1",
+    "markdown-it": "^14.3.0",
+    "shiki": "^4.3.1"
+  },
+  "devDependencies": {
+    "@types/markdown-it": "^14.1.2"
   }
 }
