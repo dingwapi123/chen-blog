@@ -8,6 +8,18 @@ export default defineNuxtConfig({
   vite: {
     plugins: [tailwindcss()],
   },
+  modules: ['@nuxt/ui', '@nuxtjs/mdc', '@nuxtjs/sitemap'],
+  ui: {
+    // The editorial system deliberately uses local/system font stacks.
+    fonts: false,
+  },
+  mdc: {
+    highlight: false,
+    components: { prose: true },
+  },
+  sitemap: {
+    autoI18n: false,
+  },
   app: {
     head: {
       title: 'Chen Blog',

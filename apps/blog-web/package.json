@@ -11,21 +11,22 @@
     "typecheck": "nuxt typecheck"
   },
   "dependencies": {
-    "@chen-blog/markdown": "workspace:*",
     "@chen-blog/shared-types": "workspace:*",
     "@chen-blog/shared-utils": "workspace:*",
-    "@shikijs/markdown-it": "^4.3.1",
+    "@nuxt/ui": "^4.9.0",
+    "@nuxtjs/mdc": "^0.22.1",
+    "@nuxtjs/sitemap": "^8.2.2",
     "@supabase/supabase-js": "^2.0.0",
     "@tailwindcss/vite": "^4.3.2",
+    "@tiptap/y-tiptap": "^3.0.6",
     "lucide-vue-next": "^1.0.0",
-    "markdown-it": "^14.3.0",
     "nuxt": "^4.4.8",
-    "shiki": "^4.3.1",
     "vue": "^3.5.39",
-    "vue-router": "^5.1.0"
+    "vue-router": "^5.1.0",
+    "y-protocols": "^1.0.7",
+    "yjs": "^13.6.31"
   },
   "devDependencies": {
-    "@types/markdown-it": "^14.1.2",
     "tailwindcss": "^4.3.2",
     "typescript": "~6.0.3",
     "vue-tsc": "^3.3.7"

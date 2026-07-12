@@ -1,13 +1,8 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { renderMarkdown } from '@chen-blog/markdown'
-
-const props = defineProps<{ content: string }>()
-// The shared renderer disables raw HTML and rejects non-allowlisted link protocols.
-const renderedContent = computed(() => renderMarkdown(props.content))
+defineProps<{ content: string }>()
 </script>
 
-<template><article class="markdown-content" v-html="renderedContent" /></template>
+<template><MDC class="markdown-content" :value="content" tag="article" /></template>
 
 <style scoped>
 .markdown-content { color: var(--text); font-family: var(--font-reading); font-size: clamp(1.08rem, 1.02rem + 0.2vw, 1.18rem); line-height: 1.9; }
