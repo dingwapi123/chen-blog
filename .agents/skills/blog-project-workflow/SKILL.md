@@ -5,7 +5,7 @@ description: Implement and review the Chen Blog monorepo. Use when changing Nuxt
 
 # Blog Project Workflow
 
-Read the root `AGENTS.md`, the relevant app-level `AGENTS.md`, and `docs/个人技术博客-技术方案-V1.0.1.md` before changing architecture-sensitive code.
+Read the root `AGENTS.md`, the relevant app-level `AGENTS.md`, and `docs/个人技术博客-技术方案-V1.0.2.md` before changing architecture-sensitive code.
 
 ## Workflow
 

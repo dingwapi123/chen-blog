@@ -14,8 +14,10 @@
     "dev:cms": "pnpm --filter @chen-blog/cms-admin dev",
     "lint": "eslint .",
     "typecheck": "pnpm -r --if-present typecheck",
-    "db:test": "supabase test db --local supabase/tests",
-    "db:types": "supabase gen types typescript --local > packages/database-types/src/index.ts"
+    "db:link": "supabase link --project-ref bpmmrasmlzgoalklakpn",
+    "db:push": "supabase db push --linked",
+    "db:test": "supabase test db --linked supabase/tests",
+    "db:types": "supabase gen types typescript --project-id bpmmrasmlzgoalklakpn > packages/database-types/src/index.ts"
   },
   "devDependencies": {
     "eslint": "^10.0.0"
