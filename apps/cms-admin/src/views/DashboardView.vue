@@ -1,11 +1,64 @@
 <script setup lang="ts">
-import { Plus, Send, Trash2 } from 'lucide-vue-next'
-import { onMounted, shallowRef } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus } from 'lucide-vue-next'
 import AdminShell from '@/components/AdminShell.vue'
-import { archivePost, listPosts, publishPost, type AdminPost } from '@/features/content/api'
-const posts=shallowRef<AdminPost[]>([]), loading=shallowRef(true), message=shallowRef('')
-async function refresh(){loading.value=true;try{posts.value=await listPosts()}finally{loading.value=false}}onMounted(()=>void refresh())
-async function publish(id:string){try{await publishPost(id);message.value='文章已发布。';await refresh()}catch(error){message.value=error instanceof Error?error.message:'发布失败。'}}async function archive(id:string){if(!confirm('确认软删除这篇文章吗？'))return;await archivePost(id);await refresh()}
+import PostTable from '@/features/posts/PostTable.vue'
+import { usePosts } from '@/features/posts/usePosts'
+import { archivePost, publishPost } from '@/features/content/api'
+import { shallowRef } from 'vue'
+
+const { posts, loading, errorMessage, refresh } = usePosts()
+const publishingId = shallowRef<string | null>(null)
+const archivingId = shallowRef<string | null>(null)
+
+async function publish(id: string) {
+  publishingId.value = id
+  try {
+    await publishPost(id)
+    ElMessage.success('文章已发布。')
+    await refresh()
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '发布失败。')
+  } finally {
+    publishingId.value = null
+  }
+}
+
+async function archive(id: string) {
+  try {
+    await ElMessageBox.confirm('文章会被归档并从公开页面隐藏，之后仍可在后台保留记录。', '确认软删除？', {
+      confirmButtonText: '归档文章',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch {
+    return
+  }
+
+  archivingId.value = id
+  try {
+    await archivePost(id)
+    ElMessage.success('文章已归档。')
+    await refresh()
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '归档失败。')
+  } finally {
+    archivingId.value = null
+  }
+}
 </script>
-<template><AdminShell><div class="page-head"><div><p class="eyebrow">writing</p><h1 class="page-title">文章</h1></div><RouterLink class="button button--primary" :to="{name:'post-new'}"><Plus :size="17"/>新建文章</RouterLink></div><p v-if="message" class="hint">{{message}}</p><div v-if="loading" class="empty-state">正在载入文章…</div><div v-else-if="!posts.length" class="empty-state">还没有文章，开始写第一篇吧。</div><div v-else class="post-table"><article v-for="post in posts" :key="post.id" class="post-row"><RouterLink class="post-row__main" :to="{name:'post-editor',params:{postId:post.id}}"><strong>{{post.title}}</strong><span>{{post.summary||'暂无摘要'}}</span></RouterLink><div class="post-row__actions"><span class="status" :data-status="post.status">{{post.status==='published'?'已发布':post.status==='archived'?'已归档':'草稿'}}</span><button v-if="post.status==='draft'" class="icon-button" title="发布" type="button" @click="publish(post.id)"><Send :size="16"/></button><button class="icon-button danger" title="软删除" type="button" @click="archive(post.id)"><Trash2 :size="16"/></button></div></article></div></AdminShell></template>
-<style scoped>.page-head{display:flex;align-items:end;justify-content:space-between;gap:1rem;margin-bottom:1.5rem}.post-table{border-top:1px solid var(--border)}.post-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 0;border-bottom:1px solid var(--border)}.post-row__main{display:grid;gap:.2rem;min-width:0}.post-row__main strong{font-size:1.05rem}.post-row__main span{overflow:hidden;color:var(--text-muted);font-size:.86rem;text-overflow:ellipsis;white-space:nowrap}.post-row__main:hover strong{color:var(--accent)}.post-row__actions{display:flex;align-items:center;gap:.5rem}.status{padding:.18rem .42rem;border-radius:.25rem;background:var(--bg-soft);color:var(--text-muted);font-size:.75rem;font-weight:700}.status[data-status="published"]{background:var(--accent-soft);color:var(--accent)}.icon-button{display:grid;width:2rem;height:2rem;place-items:center;border:0;border-radius:.4rem;background:transparent;color:var(--text-muted)}.icon-button:hover{background:var(--accent-soft);color:var(--accent)}.icon-button.danger:hover{color:var(--danger)}@media(max-width:600px){.post-row{align-items:start;flex-direction:column}.post-row__actions{width:100%;justify-content:flex-end}}</style>
+<template>
+  <AdminShell>
+    <div class="page-head">
+      <div><p class="eyebrow">writing</p><h1 class="page-title">文章</h1></div>
+      <RouterLink class="button button--primary" :to="{ name: 'post-new' }"><Plus :size="17" />新建文章</RouterLink>
+    </div>
+    <ElAlert v-if="errorMessage" :closable="false" :title="errorMessage" type="error" show-icon class="load-error" />
+    <PostTable :archiving-id :loading :posts :publishing-id @archive="archive" @publish="publish" />
+  </AdminShell>
+</template>
+
+<style scoped>
+.page-head { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+.load-error { margin-bottom: 1rem; }
+</style>
