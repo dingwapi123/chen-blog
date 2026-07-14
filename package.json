@@ -13,6 +13,7 @@
     "dev:blog": "pnpm --filter @chen-blog/blog-web dev",
     "dev:cms": "pnpm --filter @chen-blog/cms-admin dev",
     "lint": "eslint .",
+    "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r --if-present typecheck",
     "db:link": "supabase link --project-ref bpmmrasmlzgoalklakpn",
     "db:push": "supabase db push --linked",

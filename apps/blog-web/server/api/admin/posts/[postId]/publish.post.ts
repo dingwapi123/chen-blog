@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, statusMessage: 'Supabase public configuration is missing.' })
   }
   try {
-    assertAllowedContent(post.content, {
+    await assertAllowedContent(post.content, {
       allowedImagePrefixes: [getPostImagesPublicUrlPrefix(config.public.supabaseUrl)],
     })
   } catch (error) {

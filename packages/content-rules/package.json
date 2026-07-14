@@ -3,8 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
   "exports": {
     ".": "./src/index.ts"
   },
-  "dependencies": {}
+  "dependencies": {
+    "comark": "^0.5.1"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.10"
+  }
 }

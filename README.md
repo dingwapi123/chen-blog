@@ -1,6 +1,6 @@
 # Chen Blog
 
-个人技术博客与独立 CMS 的 pnpm monorepo。架构与安全约束见 [V1.0.4 技术方案](docs/个人技术博客-技术方案-V1.0.4.md)。
+个人技术博客与独立 CMS 的 pnpm monorepo。架构与安全约束见 [V1.0.5 技术方案](docs/个人技术博客-技术方案-V1.0.5.md)。
 
 ## 开发
 

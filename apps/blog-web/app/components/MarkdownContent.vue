@@ -1,10 +1,25 @@
 <script setup lang="ts">
+import {
+  createContentSecurityPlugins,
+  getPostImagesPublicUrlPrefix,
+} from '@chen-blog/content-rules'
+
 defineProps<{ content: string }>()
+
+const config = useRuntimeConfig()
+const allowedImagePrefixes = config.public.supabaseUrl
+  ? [getPostImagesPublicUrlPrefix(config.public.supabaseUrl)]
+  : []
+const contentSecurityPlugins = createContentSecurityPlugins({ allowedImagePrefixes })
 </script>
 
 <template>
   <article class="markdown-content">
-    <Comark :markdown="content" :options="{ html: false }" />
+    <Comark
+      :markdown="content"
+      :options="{ html: false }"
+      :plugins="contentSecurityPlugins"
+    />
   </article>
 </template>
 
