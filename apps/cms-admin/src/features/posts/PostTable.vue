@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Send, Trash2 } from 'lucide-vue-next'
+import { Send, Trash2 } from '@lucide/vue'
 import type { AdminPostListItem } from '@/features/content/api'
 
 defineProps<{

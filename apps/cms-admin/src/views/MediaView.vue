@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Upload } from 'lucide-vue-next'
+import { Upload } from '@lucide/vue'
 import { onMounted, shallowRef, useTemplateRef } from 'vue'
 import AdminShell from '@/components/AdminShell.vue'
 import {

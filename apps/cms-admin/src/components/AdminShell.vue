@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
-import { FileText, FolderTree, Image, LogOut, Menu, Tags, UserRound, X } from 'lucide-vue-next'
+import { FileText, FolderTree, Image, LogOut, Menu, Tags, UserRound, X } from '@lucide/vue'
 import { nextTick, onBeforeUnmount, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'

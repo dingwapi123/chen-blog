@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Pencil, Plus, Trash2 } from 'lucide-vue-next'
+import { Pencil, Plus, Trash2 } from '@lucide/vue'
 import { computed, reactive, shallowRef, watch } from 'vue'
 import AdminShell from '@/components/AdminShell.vue'
 import {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { FormInstance, FormRules } from 'element-plus'
-import { ImagePlus, RotateCcw, Send } from 'lucide-vue-next'
+import { ImagePlus, RotateCcw, Send } from '@lucide/vue'
 import { computed, reactive, shallowRef, useTemplateRef, watch } from 'vue'
 import type { PostDraftInput } from '@chen-blog/shared-types'
 import { toSlug } from '@chen-blog/shared-utils'

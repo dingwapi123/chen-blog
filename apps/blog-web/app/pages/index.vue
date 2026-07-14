@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowDownRight, ArrowUpRight } from 'lucide-vue-next'
+import { ArrowDownRight, ArrowUpRight } from '@lucide/vue'
 import { site } from '~/config/site'
 
 const { data: posts } = await useAsyncData('home-posts', fetchPublishedPosts)

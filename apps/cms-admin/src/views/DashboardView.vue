@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from 'lucide-vue-next'
+import { Plus } from '@lucide/vue'
 import AdminShell from '@/components/AdminShell.vue'
 import PostTable from '@/features/posts/PostTable.vue'
 import { usePosts } from '@/features/posts/usePosts'

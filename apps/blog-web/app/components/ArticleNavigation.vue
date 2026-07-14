@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, ArrowRight } from 'lucide-vue-next'
+import { ArrowLeft, ArrowRight } from '@lucide/vue'
 import type { ArticleNavigationItem } from '~/utils/public-blog'
 
 defineProps<{

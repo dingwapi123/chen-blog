@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowUpRight } from 'lucide-vue-next'
+import { ArrowUpRight } from '@lucide/vue'
 import { formatDate } from '@chen-blog/shared-utils'
 
 const { data: posts } = await useAsyncData('archive-posts', fetchPublishedPosts)
