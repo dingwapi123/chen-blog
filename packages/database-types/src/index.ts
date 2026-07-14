@@ -47,7 +47,9 @@ export type Database = {
           bucket_id: string
           created_at: string
           id: string
+          mime_type: string
           object_path: string
+          size_bytes: number
           updated_at: string
         }
         Insert: {
@@ -55,7 +57,9 @@ export type Database = {
           bucket_id?: string
           created_at?: string
           id?: string
+          mime_type: string
           object_path: string
+          size_bytes: number
           updated_at?: string
         }
         Update: {
@@ -63,7 +67,9 @@ export type Database = {
           bucket_id?: string
           created_at?: string
           id?: string
+          mime_type?: string
           object_path?: string
+          size_bytes?: number
           updated_at?: string
         }
         Relationships: []

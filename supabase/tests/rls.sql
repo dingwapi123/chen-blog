@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = extensions, public;
 
-select plan(57);
+select plan(60);
 
 -- Structural security invariants ------------------------------------------------
 
@@ -147,6 +147,22 @@ select is(
   'authenticated sessions have no overlapping permissive SELECT policies'
 );
 
+select is(
+  (
+    select count(*)::integer
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'media'
+      and is_nullable = 'NO'
+      and (
+        (column_name = 'mime_type' and data_type = 'text')
+        or (column_name = 'size_bytes' and data_type = 'bigint')
+      )
+  ),
+  2,
+  'media requires MIME type and byte size metadata'
+);
+
 -- Test fixtures are administrative setup and are always rolled back. -------------
 
 insert into auth.users (
@@ -203,10 +219,22 @@ values
   ('99999999-9999-4999-8999-999999999911', 'Public tag', 'rls-public-tag'),
   ('99999999-9999-4999-8999-999999999912', 'Draft tag', 'rls-draft-tag');
 
-insert into public.media (id, object_path, alt_text)
+insert into public.media (id, object_path, alt_text, mime_type, size_bytes)
 values
-  ('99999999-9999-4999-8999-999999999921', 'rls/public-cover.webp', 'Public cover'),
-  ('99999999-9999-4999-8999-999999999922', 'rls/draft-cover.webp', 'Draft cover');
+  (
+    '99999999-9999-4999-8999-999999999921',
+    'rls/public-cover.webp',
+    'Public cover',
+    'image/webp',
+    1024
+  ),
+  (
+    '99999999-9999-4999-8999-999999999922',
+    'rls/draft-cover.webp',
+    'Draft cover',
+    'image/webp',
+    2048
+  );
 
 insert into public.posts (
   id,
@@ -324,7 +352,7 @@ select throws_ok(
 );
 
 select throws_ok(
-  $$insert into public.media (object_path) values ('rls/reader.webp')$$,
+  $$insert into public.media (object_path, mime_type, size_bytes) values ('rls/reader.webp', 'image/webp', 1024)$$,
   '42501',
   'new row violates row-level security policy for table "media"',
   'a non-owner cannot create media metadata'
@@ -428,14 +456,34 @@ select lives_ok(
   $sql$
     do $block$
     begin
-      insert into public.media (id, object_path, alt_text)
-      values ('99999999-9999-4999-8999-999999999923', 'rls/owner.webp', 'Owner media');
+      insert into public.media (id, object_path, alt_text, mime_type, size_bytes)
+      values (
+        '99999999-9999-4999-8999-999999999923',
+        'rls/owner.webp',
+        'Owner media',
+        'image/webp',
+        3072
+      );
       update public.media set alt_text = 'Updated owner media'
       where id = '99999999-9999-4999-8999-999999999923';
     end
     $block$
   $sql$,
   'owner can create and update media metadata'
+);
+
+select throws_ok(
+  $$insert into public.media (object_path, mime_type, size_bytes) values ('rls/invalid.svg', 'image/svg+xml', 1024)$$,
+  '23514',
+  'new row for relation "media" violates check constraint "media_mime_type_is_supported"',
+  'media rejects MIME types outside the Storage allowlist'
+);
+
+select throws_ok(
+  $$insert into public.media (object_path, mime_type, size_bytes) values ('rls/oversized.webp', 'image/webp', 5242881)$$,
+  '23514',
+  'new row for relation "media" violates check constraint "media_size_bytes_is_valid"',
+  'media rejects files larger than the Storage limit'
 );
 
 select lives_ok(
