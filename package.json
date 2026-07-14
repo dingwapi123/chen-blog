@@ -17,6 +17,7 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "db:link": "supabase link --project-ref bpmmrasmlzgoalklakpn",
     "db:push": "supabase db push --linked",
+    "db:seed": "supabase db push --linked --include-seed",
     "db:test": "supabase test db --linked supabase/tests",
     "db:types": "supabase gen types typescript --project-id bpmmrasmlzgoalklakpn > packages/database-types/src/index.ts"
   },
