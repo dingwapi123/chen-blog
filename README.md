@@ -1,6 +1,10 @@
 # Chen Blog
 
-个人技术博客与独立 CMS 的 pnpm monorepo。架构与安全约束见 [V1.0.5 技术方案](docs/个人技术博客-技术方案-V1.0.5.md)。
+个人技术博客与独立 CMS 的 pnpm monorepo。架构与安全约束见 [V1.0.6 技术方案](docs/个人技术博客-技术方案-V1.0.6.md)。
+
+公开端使用 Nuxt 4、Nuxt UI、Tailwind CSS v4、Comark 与 Nuxt Image；CMS 使用 Vue 3、Element Plus、CodeMirror 和自研工作台 Shell。两端统一使用 `@lucide/vue` 图标并支持系统/手动浅色与暗色主题。CMS V1 只编辑 Markdown/Comark 源码，不提供草稿最终预览，也不引入后台模板、Tailwind、ECharts、`vue-echarts` 或 Yjs。
+
+公开日期统一按 `Asia/Shanghai` 展示；RSS 只分发经过 XML 转义的文章摘要；Netlify 内容页使用 600 秒 ISR。在线数据只来自专用远程 Supabase，本项目不启动本地 Supabase 或 Docker。
 
 ## 开发
 
