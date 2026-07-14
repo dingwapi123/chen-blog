@@ -23,6 +23,13 @@ export default defineNuxtConfig({
     // The editorial system deliberately uses local/system font stacks.
     fonts: false,
   },
+  colorMode: {
+    preference: 'system',
+    fallback: 'light',
+    storage: 'cookie',
+    storageKey: 'chen-blog-theme',
+    dataValue: 'theme',
+  },
   sitemap: {
     autoI18n: false,
     sources: ['/api/__sitemap__/urls'],
@@ -34,17 +41,15 @@ export default defineNuxtConfig({
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'theme-color', content: '#F7F5F0' },
+        { name: 'theme-color', content: '#f7f5f0', media: '(prefers-color-scheme: light)' },
+        { name: 'theme-color', content: '#171b1e', media: '(prefers-color-scheme: dark)' },
         {
           name: 'description',
           content: '陈信至的个人技术博客。',
         },
       ],
-      script: [
-        {
-          key: 'theme-init',
-          innerHTML: "(()=>{const key='chen-blog-theme';const saved=document.cookie.match(/(?:^|; )chen-blog-theme=([^;]*)/)?.[1];const theme=saved==='dark'||saved==='light'?saved:null;if(theme)document.documentElement.dataset.theme=theme})()",
-        },
+      link: [
+        { rel: 'alternate', type: 'application/rss+xml', title: 'Chen Blog RSS', href: '/rss.xml' },
       ],
     },
   },
@@ -52,6 +57,7 @@ export default defineNuxtConfig({
     supabaseServiceRoleKey: '',
     cmsOrigin: 'http://localhost:5173',
     public: {
+      siteUrl: '',
       supabaseUrl: '',
       supabasePublishableKey: '',
     },
@@ -60,7 +66,13 @@ export default defineNuxtConfig({
     '/': { isr: 600 },
     '/posts': { isr: 600 },
     '/posts/**': { isr: 600 },
+    '/archive': { isr: 600 },
+    '/about': { isr: 600 },
     '/categories/**': { isr: 600 },
     '/tags/**': { isr: 600 },
+    '/rss.xml': { isr: 600 },
+    '/sitemap.xml': { isr: 600 },
+    '/robots.txt': { isr: 600 },
+    '/api/**': { cache: false },
   },
 })

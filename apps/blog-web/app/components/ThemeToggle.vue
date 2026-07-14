@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { Moon, Sun } from 'lucide-vue-next'
 
-const { theme, label, initialize, toggle } = useTheme()
-onMounted(initialize)
+const { theme, label, toggle } = useTheme()
 </script>
 
 <template>

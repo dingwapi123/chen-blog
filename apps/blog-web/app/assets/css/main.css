@@ -40,7 +40,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) {
+  :root:not(.light):not(.dark):not([data-theme]) {
     --surface: #171b1e;
     --surface-low: #1e2528;
     --surface-container: #21282b;
@@ -59,6 +59,7 @@
   }
 }
 
+:root.dark,
 :root[data-theme="dark"] {
   --surface: #171b1e;
   --surface-low: #1e2528;
@@ -80,8 +81,8 @@
 * { box-sizing: border-box; }
 
 html { background: var(--bg); color-scheme: light; }
-html[data-theme="dark"] { color-scheme: dark; }
-@media (prefers-color-scheme: dark) { html:not([data-theme]) { color-scheme: dark; } }
+html.dark, html[data-theme="dark"] { color-scheme: dark; }
+@media (prefers-color-scheme: dark) { html:not(.light):not(.dark):not([data-theme]) { color-scheme: dark; } }
 
 body {
   margin: 0;

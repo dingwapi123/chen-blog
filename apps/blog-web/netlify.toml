@@ -1,0 +1,7 @@
+# Keep the repository root as Netlify's base directory and set the site's
+# package directory to apps/blog-web so Netlify discovers this file and Nuxt.
+[build]
+command = "pnpm --filter @chen-blog/blog-web build"
+
+[build.environment]
+NODE_VERSION = "22"

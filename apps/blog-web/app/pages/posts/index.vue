@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { data: posts } = await useAsyncData('posts', fetchPublishedPosts)
-useSeoMeta({ title: '文章', description: '陈信至的技术文章与学习笔记。' })
+usePageSeo({ title: '文章', description: '陈信至的技术文章与学习笔记。' })
 </script>
 
 <template>

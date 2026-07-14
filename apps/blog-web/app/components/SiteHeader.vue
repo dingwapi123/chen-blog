@@ -6,6 +6,7 @@ import { site } from '~/config/site'
 const isMenuOpen = shallowRef(false)
 const links = [
   { label: '文章', to: '/posts' },
+  { label: '归档', to: '/archive' },
   { label: '关于', to: '/about' },
 ]
 </script>

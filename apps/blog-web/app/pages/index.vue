@@ -4,8 +4,9 @@ import { site } from '~/config/site'
 
 const { data: posts } = await useAsyncData('home-posts', fetchPublishedPosts)
 const { data: categories } = await useAsyncData('home-categories', fetchCategories)
+const latestPosts = computed(() => (posts.value ?? []).slice(0, 6))
 
-useSeoMeta({ title: site.title, description: site.description, ogTitle: site.title, ogDescription: site.description })
+usePageSeo({ title: site.title, description: site.description })
 </script>
 
 <template>
@@ -28,7 +29,7 @@ useSeoMeta({ title: site.title, description: site.description, ogTitle: site.tit
         <div><p class="eyebrow">recent writing</p><h2 class="section-title">最近写了什么</h2></div>
         <NuxtLink class="section-link" to="/posts">所有文章 <ArrowUpRight :size="16" aria-hidden="true" /></NuxtLink>
       </div>
-      <PostList :posts="posts ?? []" />
+      <PostList :posts="latestPosts" />
     </section>
 
     <section class="page-shell page-section home-topics">

@@ -1,3 +1,4 @@
+import type { Database } from '@chen-blog/database-types'
 import { createClient } from '@supabase/supabase-js'
 
 export async function requireOwner(event: Parameters<typeof getRequestHeader>[0]) {
@@ -8,7 +9,7 @@ export async function requireOwner(event: Parameters<typeof getRequestHeader>[0]
   if (!config.public.supabaseUrl || !config.public.supabasePublishableKey) {
     throw createError({ statusCode: 500, statusMessage: 'Supabase public configuration is missing.' })
   }
-  const client = createClient(config.public.supabaseUrl, config.public.supabasePublishableKey, {
+  const client = createClient<Database>(config.public.supabaseUrl, config.public.supabasePublishableKey, {
     auth: { persistSession: false, autoRefreshToken: false },
     global: { headers: { Authorization: `Bearer ${token}` } },
   })
@@ -24,7 +25,7 @@ export function getServiceRoleClient(event: Parameters<typeof getRequestHeader>[
   if (!config.supabaseServiceRoleKey || !config.public.supabaseUrl) {
     throw createError({ statusCode: 500, statusMessage: 'Server publishing configuration is missing.' })
   }
-  return createClient(config.public.supabaseUrl, config.supabaseServiceRoleKey, {
+  return createClient<Database>(config.public.supabaseUrl, config.supabaseServiceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 }

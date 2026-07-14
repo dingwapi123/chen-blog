@@ -6,7 +6,7 @@ defineProps<{ posts: PostPreview[] }>()
 </script>
 
 <template>
-  <ol class="post-list">
+  <ol v-if="posts.length" class="post-list">
     <li v-for="post in posts" :key="post.id" class="post-list__item">
       <article class="post-list__article">
         <PostMeta :post="post" />
@@ -20,6 +20,7 @@ defineProps<{ posts: PostPreview[] }>()
       </article>
     </li>
   </ol>
+  <p v-else class="post-list__empty">这里还没有发布文章。</p>
 </template>
 
 <style scoped>
@@ -34,4 +35,5 @@ defineProps<{ posts: PostPreview[] }>()
 .post-list__tags { display: flex; flex-wrap: wrap; gap: var(--space-sm); margin-top: var(--space-md); }
 .post-list__tags a { color: var(--text-muted); font-size: 0.82rem; }
 .post-list__tags a:hover { color: var(--accent); }
+.post-list__empty { margin: var(--space-xl) 0; color: var(--text-muted); }
 </style>
