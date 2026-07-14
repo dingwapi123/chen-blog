@@ -5,12 +5,33 @@ export const contentPolicy = {
   allowedComarkComponents: [] as string[],
 } as const
 
+export type ContentValidationOptions = {
+  allowedImagePrefixes?: readonly string[]
+}
+
 export function isAllowedContentUrl(url: string): boolean {
   try {
     const protocol = new URL(url, 'https://chen-blog.local').protocol
     return contentPolicy.allowedLinkProtocols.includes(
       protocol as (typeof contentPolicy.allowedLinkProtocols)[number],
     )
+  } catch {
+    return false
+  }
+}
+
+export function getPostImagesPublicUrlPrefix(supabaseUrl: string): string {
+  const baseUrl = new URL(supabaseUrl)
+  if (baseUrl.protocol !== 'https:' && baseUrl.protocol !== 'http:') {
+    throw new Error('Supabase URL 必须使用 HTTP 或 HTTPS。')
+  }
+  return new URL('/storage/v1/object/public/post-images/', baseUrl).href
+}
+
+export function isAllowedContentImageUrl(url: string, allowedPrefixes: readonly string[]): boolean {
+  try {
+    const normalizedUrl = new URL(url).href
+    return allowedPrefixes.some(prefix => normalizedUrl.startsWith(new URL(prefix).href))
   } catch {
     return false
   }
@@ -45,7 +66,7 @@ function visibleSourceLines(content: string): Array<{ line: number; value: strin
  * Checks only source-level constraints that must be shared by the CMS and the
  * server-side publish gate. Comark remains responsible for parsing/rendering.
  */
-export function validateContentSource(content: string): string[] {
+export function validateContentSource(content: string, options: ContentValidationOptions = {}): string[] {
   const issues: string[] = []
 
   for (const { line, value } of visibleSourceLines(content)) {
@@ -64,6 +85,13 @@ export function validateContentSource(content: string): string[] {
       if (target && !isAllowedContentUrl(target)) {
         issues.push(`第 ${line} 行包含不允许的链接协议。`)
       }
+      if (
+        target
+        && targetMatch[0].startsWith('!')
+        && !isAllowedContentImageUrl(target, options.allowedImagePrefixes ?? [])
+      ) {
+        issues.push(`第 ${line} 行的图片不属于 post-images 媒体库。`)
+      }
     }
 
     if (/(?:^|[\s(])(?:javascript|vbscript|data):/i.test(value)) {
@@ -74,7 +102,7 @@ export function validateContentSource(content: string): string[] {
   return [...new Set(issues)]
 }
 
-export function assertAllowedContent(content: string): void {
-  const issues = validateContentSource(content)
+export function assertAllowedContent(content: string, options: ContentValidationOptions = {}): void {
+  const issues = validateContentSource(content, options)
   if (issues.length) throw new Error(issues.join(' '))
 }

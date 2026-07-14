@@ -1,14 +1,355 @@
 <script setup lang="ts">
-import { reactive, shallowRef } from 'vue'
+import type { FormInstance, FormRules } from 'element-plus'
+import { ImagePlus } from 'lucide-vue-next'
+import { reactive, shallowRef, useTemplateRef } from 'vue'
 import type { PostDraftInput } from '@chen-blog/shared-types'
 import { toSlug } from '@chen-blog/shared-utils'
-import type { AdminPost, AdminMedia, TaxonomyItem } from '@/features/content/api'
-import MarkdownEditor from '@/components/MarkdownEditor.vue'
-const { post, categories, tags, media, saving = false } = defineProps<{post:AdminPost|null;categories:TaxonomyItem[];tags:TaxonomyItem[];media:AdminMedia[];saving?:boolean}>()
-const emit=defineEmits<{save:[input:PostDraftInput]}>()
-const model=reactive<PostDraftInput>({title:post?.title??'',slug:post?.slug??'',summary:post?.summary??'',content:post?.content??'',categoryId:post?.category_id??null,coverMediaId:post?.cover_media_id??null,tagIds:post?.post_tags.map(item=>item.tag_id)??[],status:post?.status==='archived'?'archived':'draft'})
-const slugEdited=shallowRef(Boolean(post?.slug))
-function suggestSlug(){if(!slugEdited.value)model.slug=toSlug(model.title)} function submit(){emit('save',{...model,tagIds:[...model.tagIds]})}
+import MarkdownEditor, { type MarkdownEditorExpose } from '@/components/MarkdownEditor.vue'
+import MediaPickerDialog from '@/components/MediaPickerDialog.vue'
+import {
+  getPublicImageUrl,
+  type AdminMedia,
+  type AdminPost,
+  type TaxonomyItem,
+} from '@/features/content/api'
+
+interface Props {
+  post: AdminPost | null
+  categories: readonly TaxonomyItem[]
+  tags: readonly TaxonomyItem[]
+  media: readonly AdminMedia[]
+  saving?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  saving: false,
+})
+
+const emit = defineEmits<{
+  save: [input: PostDraftInput]
+}>()
+
+const editorForm = useTemplateRef<FormInstance>('editorForm')
+const markdownEditor = useTemplateRef<MarkdownEditorExpose>('markdownEditor')
+const mediaPickerOpen = shallowRef(false)
+const slugEdited = shallowRef(Boolean(props.post?.slug))
+
+const model = reactive<PostDraftInput>({
+  title: props.post?.title ?? '',
+  slug: props.post?.slug ?? '',
+  summary: props.post?.summary ?? '',
+  content: props.post?.content ?? '',
+  categoryId: props.post?.category_id ?? null,
+  coverMediaId: props.post?.cover_media_id ?? null,
+  tagIds: props.post?.post_tags.map((item) => item.tag_id) ?? [],
+  status: props.post?.status === 'archived' ? 'archived' : 'draft',
+})
+
+const rules: FormRules<PostDraftInput> = {
+  title: [
+    { required: true, message: '请输入文章标题。', trigger: 'blur' },
+  ],
+  slug: [
+    { required: true, message: '请输入文章 Slug。', trigger: 'blur' },
+  ],
+}
+
+function suggestSlug() {
+  if (!slugEdited.value) model.slug = toSlug(model.title)
+}
+
+function markSlugEdited() {
+  slugEdited.value = true
+}
+
+function openMediaPicker() {
+  mediaPickerOpen.value = true
+}
+
+function escapeMarkdownAltText(value: string) {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/\[/g, '\\[')
+    .replace(/]/g, '\\]')
+}
+
+function insertMedia(item: AdminMedia) {
+  const altText = escapeMarkdownAltText(item.alt_text.trim() || '图片')
+  const markdown = `![${altText}](${getPublicImageUrl(item)})`
+  markdownEditor.value?.insertMarkdown(markdown)
+}
+
+async function submit() {
+  const isValid = await editorForm.value?.validate().catch(() => false)
+  if (!isValid) return
+
+  emit('save', {
+    ...model,
+    tagIds: [...model.tagIds],
+  })
+}
 </script>
-<template><form class="editor-form" @submit.prevent="submit"><section class="editor-main"><div class="field"><label for="title">标题</label><input id="title" v-model="model.title" class="input title-input" required @input="suggestSlug"></div><div class="field"><label for="slug">Slug</label><input id="slug" v-model="model.slug" class="input" required @input="slugEdited=true"><span class="hint">发布地址会使用它；发布后如需修改，请先转回草稿。</span></div><div class="field"><label for="summary">摘要</label><textarea id="summary" v-model="model.summary" class="textarea summary-input" maxlength="320"></textarea></div><div class="field"><label for="content">Markdown / Comark 正文</label><MarkdownEditor v-model="model.content"/><span class="hint">正式渲染与草稿最终预览由 blog-web 的 Nuxt Comark 页面负责。</span></div></section><aside class="editor-side"><div class="field"><label for="status">保存状态</label><select id="status" v-model="model.status" class="select"><option value="draft">草稿</option><option value="archived">归档</option></select></div><div class="field"><label for="category">分类</label><select id="category" v-model="model.categoryId" class="select"><option :value="null">未分类</option><option v-for="category in categories" :key="category.id" :value="category.id">{{category.name}}</option></select></div><fieldset class="tag-field"><legend>标签</legend><label v-for="tag in tags" :key="tag.id"><input v-model="model.tagIds" type="checkbox" :value="tag.id"> {{tag.name}}</label></fieldset><div class="field"><label for="cover">封面媒体</label><select id="cover" v-model="model.coverMediaId" class="select"><option :value="null">不使用封面</option><option v-for="item in media" :key="item.id" :value="item.id">{{item.alt_text||item.object_path}}</option></select></div><button class="button button--primary" :disabled="saving" type="submit">{{saving?'正在保存…':'保存草稿'}}</button></aside></form></template>
-<style scoped>.editor-form{display:grid;grid-template-columns:minmax(0,1fr) 16rem;gap:2rem;align-items:start}.editor-main{display:grid;gap:1.15rem}.title-input{font-size:1.35rem;font-weight:700;letter-spacing:-.03em}.summary-input{min-height:6rem}.editor-content{min-height:32rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9rem}.editor-side{position:sticky;top:5rem;display:grid;gap:1rem;padding:1rem;border:1px solid var(--border);border-radius:.65rem;background:var(--bg-soft)}.tag-field{display:grid;gap:.45rem;margin:0;padding:0;border:0}.tag-field legend{margin-bottom:.3rem;font-size:.85rem;font-weight:700}.tag-field label{font-size:.86rem}.preview{border-top:1px solid var(--border);padding-top:1rem}.preview summary{cursor:pointer;font-weight:700}.preview__content{margin-top:1rem;color:var(--text-muted);line-height:1.8}.preview__content :deep(pre){overflow:auto;padding:1rem;background:var(--bg-soft)}@media(max-width:900px){.editor-form{grid-template-columns:1fr}.editor-side{position:static;grid-template-columns:repeat(2,minmax(0,1fr))}.editor-side button{grid-column:1/-1}}@media(max-width:560px){.editor-side{grid-template-columns:1fr}}</style>
+
+<template>
+  <ElForm
+    ref="editorForm"
+    class="editor-form"
+    label-position="top"
+    :model="model"
+    :rules="rules"
+    @submit.prevent="submit"
+  >
+    <section class="editor-main" aria-label="文章正文">
+      <ElFormItem label="标题" prop="title">
+        <ElInput
+          v-model="model.title"
+          class="title-input"
+          maxlength="200"
+          placeholder="文章标题"
+          @input="suggestSlug"
+        />
+      </ElFormItem>
+
+      <ElFormItem label="Slug" prop="slug">
+        <ElInput
+          v-model="model.slug"
+          maxlength="200"
+          placeholder="article-url-slug"
+          @input="markSlugEdited"
+        />
+        <span class="field-hint">
+          发布地址会使用它；发布后如需修改，请先转回草稿。
+        </span>
+      </ElFormItem>
+
+      <ElFormItem label="摘要">
+        <ElInput
+          v-model="model.summary"
+          class="summary-input"
+          maxlength="320"
+          placeholder="用一两句话概括文章内容"
+          show-word-limit
+          type="textarea"
+          :autosize="{ minRows: 3, maxRows: 8 }"
+        />
+      </ElFormItem>
+
+      <section class="content-field" aria-labelledby="content-field-title">
+        <div class="content-field__heading">
+          <div>
+            <span id="content-field-title" class="content-field__label">
+              Markdown / Comark 正文
+            </span>
+            <span class="field-hint">
+              正式渲染由 blog-web 的 Nuxt Comark 页面负责。
+            </span>
+          </div>
+          <ElButton
+            aria-label="从媒体库插入 Markdown 图片"
+            :disabled="props.media.length === 0"
+            type="primary"
+            plain
+            @click="openMediaPicker"
+          >
+            <ImagePlus :size="16" aria-hidden="true" />
+            从媒体库插入图片
+          </ElButton>
+        </div>
+        <MarkdownEditor
+          ref="markdownEditor"
+          v-model="model.content"
+        />
+        <span v-if="props.media.length === 0" class="field-hint">
+          媒体库中还没有图片，请先前往媒体页上传。
+        </span>
+      </section>
+    </section>
+
+    <aside class="editor-side" aria-label="文章设置">
+      <ElFormItem label="保存状态">
+        <ElSelect v-model="model.status" class="side-control">
+          <ElOption label="草稿" value="draft" />
+          <ElOption label="归档" value="archived" />
+        </ElSelect>
+      </ElFormItem>
+
+      <ElFormItem label="分类">
+        <ElSelect v-model="model.categoryId" class="side-control">
+          <ElOption label="未分类" :value="null" />
+          <ElOption
+            v-for="category in props.categories"
+            :key="category.id"
+            :label="category.name"
+            :value="category.id"
+          />
+        </ElSelect>
+      </ElFormItem>
+
+      <ElFormItem label="标签">
+        <ElCheckboxGroup v-if="props.tags.length" v-model="model.tagIds" class="tag-options">
+          <ElCheckbox
+            v-for="tag in props.tags"
+            :key="tag.id"
+            :value="tag.id"
+          >
+            {{ tag.name }}
+          </ElCheckbox>
+        </ElCheckboxGroup>
+        <span v-else class="field-hint">尚未创建标签。</span>
+      </ElFormItem>
+
+      <ElFormItem label="封面媒体">
+        <ElSelect v-model="model.coverMediaId" class="side-control">
+          <ElOption label="不使用封面" :value="null" />
+          <ElOption
+            v-for="item in props.media"
+            :key="item.id"
+            :label="item.alt_text || item.object_path"
+            :value="item.id"
+          />
+        </ElSelect>
+      </ElFormItem>
+
+      <ElButton
+        class="save-button"
+        :loading="props.saving"
+        native-type="submit"
+        type="primary"
+      >
+        保存草稿
+      </ElButton>
+    </aside>
+
+    <MediaPickerDialog
+      v-model="mediaPickerOpen"
+      :media="props.media"
+      @select="insertMedia"
+    />
+  </ElForm>
+</template>
+
+<style scoped>
+.editor-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 17rem;
+  gap: 2rem;
+  align-items: start;
+}
+
+.editor-main {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.title-input :deep(.el-input__inner) {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.summary-input :deep(.el-textarea__inner) {
+  line-height: 1.7;
+}
+
+.field-hint {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.content-field {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.content-field__heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.content-field__heading > div {
+  display: grid;
+}
+
+.content-field__label {
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.content-field__heading .field-hint {
+  margin-top: 0.15rem;
+}
+
+.editor-side {
+  position: sticky;
+  top: 5rem;
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--outline-ghost, var(--border));
+  border-radius: 0.65rem;
+  background: var(--bg-soft);
+}
+
+.editor-side :deep(.el-form-item) {
+  margin-bottom: 0;
+}
+
+.side-control,
+.save-button {
+  width: 100%;
+}
+
+.tag-options {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.tag-options :deep(.el-checkbox) {
+  height: auto;
+  margin-right: 0;
+  white-space: normal;
+}
+
+@media (max-width: 900px) {
+  .editor-form {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-side {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .save-button {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 620px) {
+  .content-field__heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .content-field__heading :deep(.el-button) {
+    align-self: start;
+  }
+
+  .editor-side {
+    grid-template-columns: 1fr;
+  }
+
+  .save-button {
+    grid-column: auto;
+  }
+}
+</style>

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@chen-blog/content-rules": "workspace:*",
+    "@chen-blog/database-types": "workspace:*",
     "@chen-blog/shared-types": "workspace:*",
     "@chen-blog/shared-utils": "workspace:*",
     "@codemirror/commands": "^6.10.4",

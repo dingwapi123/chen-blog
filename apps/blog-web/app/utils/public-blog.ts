@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { CategorySummary, PostDetail, PostPreview, TagSummary } from '@chen-blog/shared-types'
+import type { CategorySummary, MediaRecord, PostDetail, PostPreview, TagSummary } from '@chen-blog/shared-types'
 import { calculateReadingMinutes } from '@chen-blog/shared-utils'
 import { getDemoCategories, getDemoPost, getDemoPosts, getDemoTags } from '~/data/demo'
 
@@ -33,6 +33,12 @@ function mapPost(row: PublicPostRow): PostPreview {
 }
 
 function shouldUseDemo(): boolean { return import.meta.dev && !getClient() }
+
+export function getPublicMediaUrl(media: MediaRecord): string {
+  const client = getClient()
+  if (!client) return ''
+  return client.storage.from(media.bucketId).getPublicUrl(media.objectPath).data.publicUrl
+}
 
 export async function fetchPublishedPosts(): Promise<PostPreview[]> {
   const client = getClient()

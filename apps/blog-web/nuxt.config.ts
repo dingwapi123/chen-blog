@@ -1,9 +1,24 @@
+function getSupabaseImageDomains(): string[] {
+  const supabaseUrl = process.env.NUXT_PUBLIC_SUPABASE_URL
+  if (!supabaseUrl) return []
+
+  try {
+    return [new URL(supabaseUrl).hostname]
+  } catch {
+    return []
+  }
+}
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   css: ['~/assets/css/main.css'],
-  modules: ['@nuxt/ui', '@comark/nuxt', '@nuxtjs/sitemap'],
+  modules: ['@nuxt/image', '@nuxt/ui', '@comark/nuxt', '@nuxtjs/sitemap'],
+  image: {
+    domains: getSupabaseImageDomains(),
+    quality: 82,
+  },
   ui: {
     // The editorial system deliberately uses local/system font stacks.
     fonts: false,

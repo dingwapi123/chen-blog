@@ -1,4 +1,4 @@
-import { assertAllowedContent } from '@chen-blog/content-rules'
+import { assertAllowedContent, getPostImagesPublicUrlPrefix } from '@chen-blog/content-rules'
 
 export default defineEventHandler(async (event) => {
   requireAllowedCmsOrigin(event)
@@ -15,8 +15,14 @@ export default defineEventHandler(async (event) => {
   if (!post || post.status !== 'draft' || post.deleted_at) {
     throw createError({ statusCode: 409, statusMessage: 'Only active drafts can be published.' })
   }
+  const config = useRuntimeConfig(event)
+  if (!config.public.supabaseUrl) {
+    throw createError({ statusCode: 500, statusMessage: 'Supabase public configuration is missing.' })
+  }
   try {
-    assertAllowedContent(post.content)
+    assertAllowedContent(post.content, {
+      allowedImagePrefixes: [getPostImagesPublicUrlPrefix(config.public.supabaseUrl)],
+    })
   } catch (error) {
     throw createError({ statusCode: 422, statusMessage: error instanceof Error ? error.message : 'Article content is invalid.' })
   }

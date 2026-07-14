@@ -10,3 +10,7 @@ peerDependencyRules:
   ignoreMissing:
     - '@tiptap/y-tiptap'
     - yjs
+
+# Nuxt Image uses Sharp for local IPX processing and production fallbacks.
+onlyBuiltDependencies:
+  - sharp

@@ -15,6 +15,7 @@
     "@chen-blog/shared-types": "workspace:*",
     "@chen-blog/shared-utils": "workspace:*",
     "@comark/nuxt": "^0.5.1",
+    "@nuxt/image": "^2.0.0",
     "@nuxt/ui": "^4.9.0",
     "@nuxtjs/sitemap": "^8.2.2",
     "@supabase/supabase-js": "^2.0.0",
