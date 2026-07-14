@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { FormInstance, FormRules } from 'element-plus'
-import { ImagePlus } from 'lucide-vue-next'
-import { reactive, shallowRef, useTemplateRef } from 'vue'
+import { ImagePlus, RotateCcw, Send } from 'lucide-vue-next'
+import { computed, reactive, shallowRef, useTemplateRef, watch } from 'vue'
 import type { PostDraftInput } from '@chen-blog/shared-types'
 import { toSlug } from '@chen-blog/shared-utils'
 import MarkdownEditor, { type MarkdownEditorExpose } from '@/components/MarkdownEditor.vue'
@@ -12,6 +12,11 @@ import {
   type AdminPost,
   type TaxonomyItem,
 } from '@/features/content/api'
+import {
+  createPostDraft,
+  getPostDraftFingerprint,
+  isValidSlug,
+} from '@/features/posts/editor-state'
 
 interface Props {
   post: AdminPost | null
@@ -19,30 +24,46 @@ interface Props {
   tags: readonly TaxonomyItem[]
   media: readonly AdminMedia[]
   saving?: boolean
+  publishing?: boolean
+  transitioning?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   saving: false,
+  publishing: false,
+  transitioning: false,
 })
 
 const emit = defineEmits<{
   save: [input: PostDraftInput]
+  publish: [input: PostDraftInput]
+  requestDraft: []
+  dirtyChange: [dirty: boolean]
 }>()
 
 const editorForm = useTemplateRef<FormInstance>('editorForm')
 const markdownEditor = useTemplateRef<MarkdownEditorExpose>('markdownEditor')
 const mediaPickerOpen = shallowRef(false)
-const slugEdited = shallowRef(Boolean(props.post?.slug))
+const slugEdited = shallowRef(false)
+const contentError = shallowRef('')
+const initialFingerprint = shallowRef('')
+const model = reactive<PostDraftInput>(createPostDraft(null))
 
-const model = reactive<PostDraftInput>({
-  title: props.post?.title ?? '',
-  slug: props.post?.slug ?? '',
-  summary: props.post?.summary ?? '',
-  content: props.post?.content ?? '',
-  categoryId: props.post?.category_id ?? null,
-  coverMediaId: props.post?.cover_media_id ?? null,
-  tagIds: props.post?.post_tags.map((item) => item.tag_id) ?? [],
-  status: props.post?.status === 'archived' ? 'archived' : 'draft',
+const isPublished = computed(() => props.post?.status === 'published')
+const isArchived = computed(() => props.post?.status === 'archived')
+const isReadOnly = computed(() => isPublished.value || isArchived.value)
+const busy = computed(() => props.saving || props.publishing || props.transitioning)
+const fieldsDisabled = computed(() => isReadOnly.value || busy.value)
+const isDirty = computed(() => (
+  !isReadOnly.value && getPostDraftFingerprint(model) !== initialFingerprint.value
+))
+const categorySelection = computed({
+  get: () => model.categoryId ?? '',
+  set: (value: string) => { model.categoryId = value || null },
+})
+const coverSelection = computed({
+  get: () => model.coverMediaId ?? '',
+  set: (value: string) => { model.coverMediaId = value || null },
 })
 
 const rules: FormRules<PostDraftInput> = {
@@ -51,8 +72,29 @@ const rules: FormRules<PostDraftInput> = {
   ],
   slug: [
     { required: true, message: '请输入文章 Slug。', trigger: 'blur' },
+    {
+      validator: (_rule, value: string, callback) => {
+        if (!value || isValidSlug(value)) callback()
+        else callback(new Error('Slug 只能使用文字、数字和单个连字符，且不能以连字符开头或结尾。'))
+      },
+      trigger: ['blur', 'change'],
+    },
   ],
 }
+
+watch(
+  () => props.post,
+  (post) => {
+    const nextDraft = createPostDraft(post)
+    Object.assign(model, nextDraft, { tagIds: [...nextDraft.tagIds] })
+    initialFingerprint.value = getPostDraftFingerprint(nextDraft)
+    slugEdited.value = Boolean(post?.slug)
+    contentError.value = ''
+  },
+  { immediate: true },
+)
+
+watch(isDirty, (dirty) => emit('dirtyChange', dirty), { immediate: true })
 
 function suggestSlug() {
   if (!slugEdited.value) model.slug = toSlug(model.title)
@@ -60,10 +102,6 @@ function suggestSlug() {
 
 function markSlugEdited() {
   slugEdited.value = true
-}
-
-function openMediaPicker() {
-  mediaPickerOpen.value = true
 }
 
 function escapeMarkdownAltText(value: string) {
@@ -75,18 +113,31 @@ function escapeMarkdownAltText(value: string) {
 
 function insertMedia(item: AdminMedia) {
   const altText = escapeMarkdownAltText(item.alt_text.trim() || '图片')
-  const markdown = `![${altText}](${getPublicImageUrl(item)})`
-  markdownEditor.value?.insertMarkdown(markdown)
+  markdownEditor.value?.insertMarkdown(`![${altText}](${getPublicImageUrl(item)})`)
 }
 
-async function submit() {
+function getInput(): PostDraftInput {
+  return {
+    ...model,
+    status: 'draft',
+    tagIds: [...model.tagIds],
+  }
+}
+
+async function submit(action: 'save' | 'publish') {
+  if (isReadOnly.value || busy.value) return
+
+  contentError.value = ''
   const isValid = await editorForm.value?.validate().catch(() => false)
   if (!isValid) return
 
-  emit('save', {
-    ...model,
-    tagIds: [...model.tagIds],
-  })
+  if (action === 'publish' && !model.content.trim()) {
+    contentError.value = '发布前请先填写文章正文。'
+    return
+  }
+
+  if (action === 'publish') emit('publish', getInput())
+  else emit('save', getInput())
 }
 </script>
 
@@ -97,13 +148,31 @@ async function submit() {
     label-position="top"
     :model="model"
     :rules="rules"
-    @submit.prevent="submit"
+    @submit.prevent="submit('save')"
   >
     <section class="editor-main" aria-label="文章正文">
+      <ElAlert
+        v-if="isPublished"
+        :closable="false"
+        description="已发布文章目前为只读。先转回草稿，再编辑并重新发布。"
+        title="文章正在公开展示"
+        type="success"
+        show-icon
+      />
+      <ElAlert
+        v-else-if="isArchived"
+        :closable="false"
+        description="V1 不提供恢复入口，归档内容仅保留供查阅。"
+        title="文章已归档"
+        type="warning"
+        show-icon
+      />
+
       <ElFormItem label="标题" prop="title">
         <ElInput
           v-model="model.title"
           class="title-input"
+          :disabled="fieldsDisabled"
           maxlength="200"
           placeholder="文章标题"
           @input="suggestSlug"
@@ -113,6 +182,7 @@ async function submit() {
       <ElFormItem label="Slug" prop="slug">
         <ElInput
           v-model="model.slug"
+          :disabled="fieldsDisabled"
           maxlength="200"
           placeholder="article-url-slug"
           @input="markSlugEdited"
@@ -126,6 +196,7 @@ async function submit() {
         <ElInput
           v-model="model.summary"
           class="summary-input"
+          :disabled="fieldsDisabled"
           maxlength="320"
           placeholder="用一两句话概括文章内容"
           show-word-limit
@@ -146,10 +217,10 @@ async function submit() {
           </div>
           <ElButton
             aria-label="从媒体库插入 Markdown 图片"
-            :disabled="props.media.length === 0"
+            :disabled="fieldsDisabled || props.media.length === 0"
             type="primary"
             plain
-            @click="openMediaPicker"
+            @click="mediaPickerOpen = true"
           >
             <ImagePlus :size="16" aria-hidden="true" />
             从媒体库插入图片
@@ -158,24 +229,28 @@ async function submit() {
         <MarkdownEditor
           ref="markdownEditor"
           v-model="model.content"
+          :readonly="fieldsDisabled"
         />
         <span v-if="props.media.length === 0" class="field-hint">
           媒体库中还没有图片，请先前往媒体页上传。
         </span>
+        <p v-if="contentError" class="content-error" role="alert">
+          {{ contentError }}
+        </p>
       </section>
     </section>
 
     <aside class="editor-side" aria-label="文章设置">
-      <ElFormItem label="保存状态">
-        <ElSelect v-model="model.status" class="side-control">
-          <ElOption label="草稿" value="draft" />
-          <ElOption label="归档" value="archived" />
-        </ElSelect>
+      <ElFormItem label="内容状态">
+        <ElInput
+          :model-value="isPublished ? '已发布' : isArchived ? '已归档' : '草稿'"
+          disabled
+        />
       </ElFormItem>
 
       <ElFormItem label="分类">
-        <ElSelect v-model="model.categoryId" class="side-control">
-          <ElOption label="未分类" :value="null" />
+        <ElSelect v-model="categorySelection" :disabled="fieldsDisabled" class="side-control">
+          <ElOption label="未分类" value="" />
           <ElOption
             v-for="category in props.categories"
             :key="category.id"
@@ -186,7 +261,12 @@ async function submit() {
       </ElFormItem>
 
       <ElFormItem label="标签">
-        <ElCheckboxGroup v-if="props.tags.length" v-model="model.tagIds" class="tag-options">
+        <ElCheckboxGroup
+          v-if="props.tags.length"
+          v-model="model.tagIds"
+          :disabled="fieldsDisabled"
+          class="tag-options"
+        >
           <ElCheckbox
             v-for="tag in props.tags"
             :key="tag.id"
@@ -199,8 +279,8 @@ async function submit() {
       </ElFormItem>
 
       <ElFormItem label="封面媒体">
-        <ElSelect v-model="model.coverMediaId" class="side-control">
-          <ElOption label="不使用封面" :value="null" />
+        <ElSelect v-model="coverSelection" :disabled="fieldsDisabled" class="side-control">
+          <ElOption label="不使用封面" value="" />
           <ElOption
             v-for="item in props.media"
             :key="item.id"
@@ -210,14 +290,38 @@ async function submit() {
         </ElSelect>
       </ElFormItem>
 
-      <ElButton
-        class="save-button"
-        :loading="props.saving"
-        native-type="submit"
-        type="primary"
-      >
-        保存草稿
-      </ElButton>
+      <div v-if="isPublished" class="editor-actions">
+        <ElButton
+          :loading="props.transitioning"
+          type="primary"
+          plain
+          @click="emit('requestDraft')"
+        >
+          <RotateCcw :size="16" aria-hidden="true" />
+          转为草稿继续编辑
+        </ElButton>
+      </div>
+      <p v-else-if="isArchived" class="archived-note">
+        归档文章不能发布或恢复。
+      </p>
+      <div v-else class="editor-actions">
+        <ElButton
+          :loading="props.saving"
+          :disabled="busy"
+          native-type="submit"
+        >
+          保存草稿
+        </ElButton>
+        <ElButton
+          :loading="props.publishing"
+          :disabled="busy"
+          type="primary"
+          @click="submit('publish')"
+        >
+          <Send :size="16" aria-hidden="true" />
+          保存并发布
+        </ElButton>
+      </div>
     </aside>
 
     <MediaPickerDialog
@@ -238,7 +342,7 @@ async function submit() {
 
 .editor-main {
   display: grid;
-  gap: 0.2rem;
+  gap: 0.4rem;
   min-width: 0;
 }
 
@@ -252,10 +356,11 @@ async function submit() {
   line-height: 1.7;
 }
 
-.field-hint {
+.field-hint,
+.archived-note {
   display: block;
   margin-top: 0.35rem;
-  color: var(--text-muted);
+  color: var(--on-surface-muted);
   font-size: 0.78rem;
   line-height: 1.5;
 }
@@ -277,7 +382,7 @@ async function submit() {
 }
 
 .content-field__label {
-  color: var(--text);
+  color: var(--on-surface);
   font-size: 0.85rem;
   font-weight: 700;
   line-height: 1.4;
@@ -287,15 +392,21 @@ async function submit() {
   margin-top: 0.15rem;
 }
 
+.content-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.82rem;
+}
+
 .editor-side {
   position: sticky;
   top: 5rem;
   display: grid;
   gap: 1rem;
   padding: 1rem;
-  border: 1px solid var(--outline-ghost, var(--border));
+  border: 1px solid var(--outline-ghost);
   border-radius: 0.65rem;
-  background: var(--bg-soft);
+  background: var(--surface-low);
 }
 
 .editor-side :deep(.el-form-item) {
@@ -303,8 +414,18 @@ async function submit() {
 }
 
 .side-control,
-.save-button {
+.editor-actions,
+.editor-actions :deep(.el-button) {
   width: 100%;
+}
+
+.editor-actions {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.editor-actions :deep(.el-button + .el-button) {
+  margin-left: 0;
 }
 
 .tag-options {
@@ -329,7 +450,8 @@ async function submit() {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .save-button {
+  .editor-actions,
+  .archived-note {
     grid-column: 1 / -1;
   }
 }
@@ -348,7 +470,8 @@ async function submit() {
     grid-template-columns: 1fr;
   }
 
-  .save-button {
+  .editor-actions,
+  .archived-note {
     grid-column: auto;
   }
 }

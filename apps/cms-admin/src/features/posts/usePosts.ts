@@ -1,8 +1,8 @@
 import { onMounted, shallowRef } from 'vue'
-import { listPosts, type AdminPost } from '@/features/content/api'
+import { listPosts, type AdminPostListItem } from '@/features/content/api'
 
 export function usePosts() {
-  const posts = shallowRef<AdminPost[]>([])
+  const posts = shallowRef<AdminPostListItem[]>([])
   const loading = shallowRef(true)
   const errorMessage = shallowRef('')
 

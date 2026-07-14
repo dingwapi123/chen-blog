@@ -94,7 +94,7 @@ function resetSelection() {
 <style scoped>
 .media-picker__intro {
   margin: 0 0 1rem;
-  color: var(--text-muted);
+  color: var(--on-surface-muted);
   font-size: 0.86rem;
 }
 
@@ -112,10 +112,10 @@ function resetSelection() {
   min-width: 0;
   overflow: hidden;
   padding: 0;
-  border: 1px solid var(--outline-ghost, var(--border));
+  border: 0;
   border-radius: 0.55rem;
-  background: var(--bg-soft);
-  color: var(--text);
+  background: var(--surface-low);
+  color: var(--on-surface);
   text-align: left;
   transition: background-color 160ms ease, box-shadow 160ms ease;
 }
@@ -132,7 +132,7 @@ function resetSelection() {
 .media-option__image {
   width: 100%;
   aspect-ratio: 4 / 3;
-  background: var(--bg-elevated);
+  background: var(--surface-elevated);
 }
 
 .media-option__image :deep(.el-image__inner) {
@@ -158,7 +158,7 @@ function resetSelection() {
 }
 
 .media-option__meta span {
-  color: var(--text-muted);
+  color: var(--on-surface-muted);
   font-size: 0.72rem;
 }
 

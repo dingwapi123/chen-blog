@@ -1,0 +1,8 @@
+# Netlify site settings: Package directory = apps/cms-admin; leave Base directory unset.
+[build]
+  command = "pnpm --filter @chen-blog/cms-admin build"
+  publish = "apps/cms-admin/dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  PNPM_VERSION = "10.29.1"

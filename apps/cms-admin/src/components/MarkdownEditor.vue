@@ -7,13 +7,24 @@ export interface MarkdownEditorExpose {
 <script setup lang="ts">
 import { defaultKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
-import { EditorState } from '@codemirror/state'
+import { Compartment, EditorState } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { onBeforeUnmount, onMounted, useTemplateRef, watch } from 'vue'
 
 const model = defineModel<string>({ required: true })
+const props = withDefaults(defineProps<{ readonly?: boolean }>(), {
+  readonly: false,
+})
 const editorRoot = useTemplateRef<HTMLDivElement>('editorRoot')
+const editableCompartment = new Compartment()
 let editorView: EditorView | undefined
+
+function editableExtensions(readonly: boolean) {
+  return [
+    EditorState.readOnly.of(readonly),
+    EditorView.editable.of(!readonly),
+  ]
+}
 
 onMounted(() => {
   if (!editorRoot.value) return
@@ -24,6 +35,7 @@ onMounted(() => {
       keymap.of(defaultKeymap),
       markdown(),
       EditorView.lineWrapping,
+      editableCompartment.of(editableExtensions(props.readonly)),
       EditorView.contentAttributes.of({
         'aria-label': 'Markdown / Comark 正文编辑器',
       }),
@@ -36,7 +48,7 @@ onMounted(() => {
 })
 
 function insertMarkdown(text: string) {
-  if (!text) return
+  if (!text || props.readonly) return
 
   if (!editorView) {
     model.value += text
@@ -65,6 +77,12 @@ watch(model, (nextValue) => {
   editorView.dispatch({ changes: { from: 0, to: editorView.state.doc.length, insert: nextValue } })
 })
 
+watch(() => props.readonly, (readonly) => {
+  editorView?.dispatch({
+    effects: editableCompartment.reconfigure(editableExtensions(readonly)),
+  })
+})
+
 onBeforeUnmount(() => {
   editorView?.destroy()
   editorView = undefined
@@ -79,15 +97,15 @@ onBeforeUnmount(() => {
 .markdown-editor {
   min-height: 32rem;
   overflow: hidden;
-  border: 1px solid var(--outline-ghost, var(--border));
+  border: 1px solid var(--outline-ghost);
   border-radius: 0.5rem;
-  background: var(--bg-elevated);
+  background: var(--surface-elevated);
 }
 
 .markdown-editor :deep(.cm-editor) {
   min-height: 32rem;
-  background: var(--bg-elevated);
-  color: var(--text);
+  background: var(--surface-elevated);
+  color: var(--on-surface);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.9rem;
 }
@@ -99,9 +117,9 @@ onBeforeUnmount(() => {
 }
 
 .markdown-editor :deep(.cm-gutters) {
-  border-right: 1px solid var(--outline-ghost, var(--border));
-  background: var(--bg-soft);
-  color: var(--text-faint);
+  border-right: 1px solid var(--outline-ghost);
+  background: var(--surface-low);
+  color: var(--on-surface-faint);
 }
 
 .markdown-editor :deep(.cm-activeLine),
