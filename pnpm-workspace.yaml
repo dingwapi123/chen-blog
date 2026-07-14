@@ -1,3 +1,12 @@
 packages:
   - apps/*
   - packages/*
+
+# Nuxt UI exposes an optional rich-text editor surface, but this project only
+# uses its interface primitives and keeps Markdown editing in CodeMirror.
+# Keep strict peer checks for everything else while intentionally omitting the
+# unused collaboration stack.
+peerDependencyRules:
+  ignoreMissing:
+    - '@tiptap/y-tiptap'
+    - yjs

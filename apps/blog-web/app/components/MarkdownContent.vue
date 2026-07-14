@@ -2,7 +2,11 @@
 defineProps<{ content: string }>()
 </script>
 
-<template><MDC class="markdown-content" :value="content" tag="article" /></template>
+<template>
+  <article class="markdown-content">
+    <Comark :markdown="content" :options="{ html: false }" />
+  </article>
+</template>
 
 <style scoped>
 .markdown-content { color: var(--text); font-family: var(--font-reading); font-size: clamp(1.08rem, 1.02rem + 0.2vw, 1.18rem); line-height: 1.9; }

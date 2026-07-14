@@ -1,21 +1,12 @@
-import tailwindcss from '@tailwindcss/vite'
-
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   css: ['~/assets/css/main.css'],
-  vite: {
-    plugins: [tailwindcss()],
-  },
-  modules: ['@nuxt/ui', '@nuxtjs/mdc', '@nuxtjs/sitemap'],
+  modules: ['@nuxt/ui', '@comark/nuxt', '@nuxtjs/sitemap'],
   ui: {
     // The editorial system deliberately uses local/system font stacks.
     fonts: false,
-  },
-  mdc: {
-    highlight: false,
-    components: { prose: true },
   },
   sitemap: {
     autoI18n: false,
