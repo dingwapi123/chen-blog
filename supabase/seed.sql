@@ -1,11 +1,15 @@
--- V1.0.0 intentionally has no seeded owner.
+-- The sample content seed intentionally has no owner account.
 -- Create the Auth user through Supabase Dashboard, then insert its UID into profiles
 -- using a controlled administrative SQL session.
 insert into public.categories (id, name, slug, description)
 values
   ('11111111-1111-4111-8111-111111111111', '工程实践', 'engineering', '关于构建、维护与交付软件的记录。'),
   ('22222222-2222-4222-8222-222222222222', '学习笔记', 'notes', '把值得长期复用的理解写下来。'),
-  ('33333333-3333-4333-8333-333333333333', '工具与效率', 'tools', '减少摩擦，让注意力回到真正重要的事情。');
+  ('33333333-3333-4333-8333-333333333333', '工具与效率', 'tools', '减少摩擦，让注意力回到真正重要的事情。')
+on conflict (id) do update set
+  name = excluded.name,
+  slug = excluded.slug,
+  description = excluded.description;
 
 insert into public.tags (id, name, slug)
 values
@@ -13,7 +17,10 @@ values
   ('22222222-2222-4222-8222-bbbbbbbbbbbb', 'Nuxt', 'nuxt'),
   ('33333333-3333-4333-8333-cccccccccccc', 'TypeScript', 'typescript'),
   ('44444444-4444-4444-8444-dddddddddddd', '写作', 'writing'),
-  ('55555555-5555-4555-8555-eeeeeeeeeeee', '工作流', 'workflow');
+  ('55555555-5555-4555-8555-eeeeeeeeeeee', '工作流', 'workflow')
+on conflict (id) do update set
+  name = excluded.name,
+  slug = excluded.slug;
 
 insert into public.posts (id, title, slug, summary, content, category_id, status)
 values
@@ -43,7 +50,15 @@ values
     E'# 让工具退后一步\n\n工具应该降低摩擦，而不是不断要求注意力。\n\n## 一个简单原则\n\n当一个流程需要解释太多次，它就值得被重新设计。\n\n- 保留明确的默认值\n- 删除暂时没有收益的选项\n- 为重要操作提供反馈\n\n这样才有空间做真正重要的事。',
     '33333333-3333-4333-8333-333333333333',
     'published'
-  );
+  )
+on conflict (id) do update set
+  title = excluded.title,
+  slug = excluded.slug,
+  summary = excluded.summary,
+  content = excluded.content,
+  category_id = excluded.category_id,
+  status = excluded.status,
+  deleted_at = null;
 
 insert into public.post_tags (post_id, tag_id)
 values
@@ -51,4 +66,5 @@ values
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '33333333-3333-4333-8333-cccccccccccc'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '44444444-4444-4444-8444-dddddddddddd'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '55555555-5555-4555-8555-eeeeeeeeeeee'),
-  ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', '55555555-5555-4555-8555-eeeeeeeeeeee');
+  ('cccccccc-cccc-4ccc-8ccc-cccccccccccc', '55555555-5555-4555-8555-eeeeeeeeeeee')
+on conflict (post_id, tag_id) do nothing;
