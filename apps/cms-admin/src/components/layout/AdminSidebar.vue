@@ -19,7 +19,7 @@ const {
 }>()
 
 const emit = defineEmits<{
-  close: []
+  close: [focusTarget?: 'trigger' | 'main']
   logout: []
   toggleCollapse: []
 }>()
@@ -59,7 +59,7 @@ defineExpose({ focusFirst, getFocusableItems })
         class="admin-sidebar__brand"
         :to="{ name: 'dashboard' }"
         :aria-label="showLabels ? undefined : 'Chen Blog CMS 首页'"
-        @click="emit('close')"
+        @click="emit('close', 'main')"
       >
         <span class="admin-sidebar__brand-mark" aria-hidden="true">C</span>
         <span v-if="showLabels" class="admin-sidebar__brand-copy">
@@ -72,13 +72,13 @@ defineExpose({ focusFirst, getFocusableItems })
         class="admin-sidebar__mobile-close"
         type="button"
         aria-label="关闭导航菜单"
-        @click="emit('close')"
+        @click="emit('close', 'trigger')"
       >
         <X :size="18" aria-hidden="true" />
       </button>
     </div>
 
-    <AdminNavigation :show-labels="showLabels" @navigate="emit('close')" />
+    <AdminNavigation :show-labels="showLabels" @navigate="emit('close', 'main')" />
 
     <AdminOwnerPanel
       v-if="!mobile"

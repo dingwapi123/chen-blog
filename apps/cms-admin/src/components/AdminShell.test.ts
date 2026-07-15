@@ -28,6 +28,7 @@ const RouterLinkStub = defineComponent({
   inheritAttrs: false,
   setup(_props, { attrs, slots }) {
     return () => h('a', {
+      class: attrs.class,
       href: '/',
       onClick: attrs.onClick as (() => void) | undefined,
     }, slots.default?.())
@@ -80,6 +81,44 @@ describe('AdminShell navigation', () => {
     expect(wrapper.get('.admin-shell__workspace').attributes('aria-hidden')).toBeUndefined()
     expect(wrapper.get('.admin-shell__workspace').attributes()).not.toHaveProperty('inert')
     expect(document.activeElement).toBe(menuButton.element)
+    wrapper.unmount()
+  })
+
+  it('restores the menu trigger when the drawer close button is clicked', async () => {
+    const wrapper = mount(AdminShell, {
+      attachTo: document.body,
+      slots: { default: '<p>工作区</p>' },
+      global: { stubs: { RouterLink: RouterLinkStub } },
+    })
+    await flushPromises()
+
+    const menuButton = wrapper.get('.admin-topbar__menu')
+    await menuButton.trigger('click')
+    await flushPromises()
+
+    await wrapper.get('.admin-sidebar__mobile-close').trigger('click')
+    await flushPromises()
+
+    expect(menuButton.attributes('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(menuButton.element)
+    wrapper.unmount()
+  })
+
+  it('moves focus to the workspace after choosing a mobile navigation item', async () => {
+    const wrapper = mount(AdminShell, {
+      attachTo: document.body,
+      slots: { default: '<p>工作区</p>' },
+      global: { stubs: { RouterLink: RouterLinkStub } },
+    })
+    await flushPromises()
+
+    await wrapper.get('.admin-topbar__menu').trigger('click')
+    await flushPromises()
+    await wrapper.get('.admin-navigation__link').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('.admin-topbar__menu').attributes('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(wrapper.get('#cms-main-content').element)
     wrapper.unmount()
   })
 

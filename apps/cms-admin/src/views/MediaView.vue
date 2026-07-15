@@ -637,7 +637,7 @@ onBeforeUnmount(() => {
   inset: auto 0 0;
   padding: 1.5rem 0.7rem 0.6rem;
   background: linear-gradient(transparent, color-mix(in srgb, var(--code-surface) 82%, transparent));
-  color: var(--on-code);
+  color: var(--code-on-surface);
   font-size: 0.72rem;
   opacity: 0;
   text-align: left;

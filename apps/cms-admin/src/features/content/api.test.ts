@@ -17,7 +17,9 @@ import {
   listTaxonomy,
   normalizePostListQuery,
   parsePostListRouteQuery,
+  PostSavePartialError,
   savePost,
+  saveTaxonomy,
   serializePostListRouteQuery,
   updateMediaAltText,
 } from './api'
@@ -103,7 +105,84 @@ describe('savePost', () => {
     }
     mocks.getSupabase.mockReturnValue(client)
 
-    await expect(savePost('post-1', safeDraft)).rejects.toThrow('文章主体已保存，但标签同步失败')
+    const error = await savePost('post-1', safeDraft).catch(caughtError => caughtError)
+
+    expect(error).toBeInstanceOf(PostSavePartialError)
+    if (!(error instanceof PostSavePartialError)) throw error
+    expect(error).toMatchObject({
+      postId: 'post-1',
+      tagSyncStage: 'clear-existing',
+    })
+    expect(error.cause).toBe(tagError)
+  })
+
+  it('keeps a newly inserted post id when tag synchronization fails', async () => {
+    const tagError = new Error('tag relation failed')
+    const insertPost = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({ data: { id: 'new-post-1' }, error: null }),
+      }),
+    })
+    const deleteTags = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: tagError }),
+    })
+    const client = {
+      from: vi.fn((table: string) => (
+        table === 'posts'
+          ? { insert: insertPost }
+          : { delete: deleteTags }
+      )),
+    }
+    mocks.getSupabase.mockReturnValue(client)
+
+    const error = await savePost(undefined, safeDraft).catch(caughtError => caughtError)
+
+    expect(error).toBeInstanceOf(PostSavePartialError)
+    if (!(error instanceof PostSavePartialError)) throw error
+    expect(error).toMatchObject({
+      postId: 'new-post-1',
+      tagSyncStage: 'clear-existing',
+    })
+    expect(error.cause).toBe(tagError)
+    expect(insertPost).toHaveBeenCalledTimes(1)
+  })
+
+  it('identifies a failed selected-tag insert after clearing old relations', async () => {
+    const tagError = new Error('selected tags failed')
+    const deleteTags = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null }),
+    })
+    const insertTags = vi.fn().mockResolvedValue({ error: tagError })
+    const client = {
+      from: vi.fn((table: string) => {
+        if (table === 'posts') {
+          return {
+            update: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                select: vi.fn().mockReturnValue({
+                  maybeSingle: vi.fn().mockResolvedValue({ data: { id: 'post-1' }, error: null }),
+                }),
+              }),
+            }),
+          }
+        }
+        return { delete: deleteTags, insert: insertTags }
+      }),
+    }
+    mocks.getSupabase.mockReturnValue(client)
+
+    const error = await savePost('post-1', {
+      ...safeDraft,
+      tagIds: ['tag-1'],
+    }).catch(caughtError => caughtError)
+
+    expect(error).toBeInstanceOf(PostSavePartialError)
+    if (!(error instanceof PostSavePartialError)) throw error
+    expect(error).toMatchObject({
+      postId: 'post-1',
+      tagSyncStage: 'insert-selected',
+    })
+    expect(error.cause).toBe(tagError)
   })
 })
 
@@ -249,7 +328,7 @@ describe('deleteTaxonomy', () => {
     const remove = vi.fn().mockReturnValue({ eq })
     mocks.getSupabase.mockReturnValue({ from: vi.fn().mockReturnValue({ delete: remove }) })
 
-    await expect(deleteTaxonomy('tags', 'missing-tag')).rejects.toThrow('可能已被删除')
+    await expect(deleteTaxonomy('tags', 'missing-tag')).rejects.toThrow('仍被文章使用')
   })
 })
 
@@ -279,6 +358,22 @@ describe('taxonomy and media metadata', () => {
     ])
   })
 
+  it('does not report a taxonomy update when RLS protects published metadata', async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null })
+    const select = vi.fn().mockReturnValue({ maybeSingle })
+    const eq = vi.fn().mockReturnValue({ select })
+    const update = vi.fn().mockReturnValue({ eq })
+    mocks.getSupabase.mockReturnValue({ from: vi.fn().mockReturnValue({ update }) })
+
+    await expect(saveTaxonomy('categories', {
+      id: 'category-1',
+      name: '新名称',
+      slug: 'new-name',
+      description: '',
+    })).rejects.toThrow('正被已发布文章使用')
+    expect(select).toHaveBeenCalledWith('id')
+  })
+
   it('trims and persists media alternative text with a matched-row check', async () => {
     const updated = {
       id: 'media-1',
@@ -298,5 +393,16 @@ describe('taxonomy and media metadata', () => {
     await expect(updateMediaAltText('media-1', '  新的图片说明  ')).resolves.toEqual(updated)
     expect(update).toHaveBeenCalledWith({ alt_text: '新的图片说明' })
     await expect(updateMediaAltText('media-1', '   ')).rejects.toThrow('替代文本不能为空')
+  })
+
+  it('explains when published-cover RLS rejects an alternative text update', async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null })
+    const select = vi.fn().mockReturnValue({ maybeSingle })
+    const eq = vi.fn().mockReturnValue({ select })
+    const update = vi.fn().mockReturnValue({ eq })
+    mocks.getSupabase.mockReturnValue({ from: vi.fn().mockReturnValue({ update }) })
+
+    await expect(updateMediaAltText('published-cover', '新说明'))
+      .rejects.toThrow('正作为已发布文章的封面')
   })
 })

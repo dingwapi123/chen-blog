@@ -17,6 +17,7 @@ import {
   listTaxonomy,
   movePostToDraft,
   publishPost,
+  PostSavePartialError,
   savePost,
   type AdminMedia,
   type AdminPost,
@@ -51,6 +52,7 @@ const transitioning = shallowRef(false)
 const dirty = shallowRef(false)
 const bypassNavigationPrompt = shallowRef(false)
 let loadSequence = 0
+let preserveEditorForPostId: string | undefined
 
 const isBusy = computed(() => saving.value || publishing.value || transitioning.value)
 
@@ -82,26 +84,69 @@ async function loadEditor(currentPostId?: string) {
   }
 }
 
-watch(postId, (id) => void loadEditor(id), { immediate: true })
+watch(postId, (id) => {
+  if (id && id === preserveEditorForPostId) {
+    preserveEditorForPostId = undefined
+    return
+  }
+  void loadEditor(id)
+}, { immediate: true })
 
-async function syncSavedPost(id: string) {
+async function replaceNewPostRoute(id: string) {
+  if (postId.value) return
+
+  // Keep the form's current draft in memory. A successful save reloads it
+  // explicitly; a partial tag save must preserve the unsynchronized tag IDs.
+  preserveEditorForPostId = id
+  bypassNavigationPrompt.value = true
+  try {
+    await router.replace({
+      name: 'post-editor',
+      params: { postId: id },
+      query: route.query,
+    })
+    await nextTick()
+    if (postId.value !== id) {
+      preserveEditorForPostId = undefined
+      throw new Error('无法切换到已创建的文章编辑页。')
+    }
+  } catch (error) {
+    if (preserveEditorForPostId === id) preserveEditorForPostId = undefined
+    throw error
+  } finally {
+    bypassNavigationPrompt.value = false
+  }
+}
+
+async function reloadSavedPost(id: string) {
   const nextPost = await getPost(id)
   if (!nextPost) throw new Error('文章保存后无法重新载入。')
   post.value = nextPost
   await nextTick()
+}
 
-  if (!postId.value) {
-    bypassNavigationPrompt.value = true
-    try {
-      await router.replace({
-        name: 'post-editor',
-        params: { postId: id },
-        query: route.query,
-      })
-    } finally {
-      bypassNavigationPrompt.value = false
-    }
+async function syncSavedPost(id: string) {
+  await replaceNewPostRoute(id)
+  await reloadSavedPost(id)
+}
+
+async function recoverPartialSave(error: PostSavePartialError, publishRequested = false) {
+  const publishNote = publishRequested ? ' 本次未执行发布。' : ''
+
+  try {
+    // Route first: even if the following reload fails, another save updates the
+    // row that was just created instead of inserting a duplicate slug.
+    await replaceNewPostRoute(error.postId)
+  } catch {
+    ElMessage.error(
+      `${error.message}${publishNote} 自动切换到已创建文章失败，请从文章列表重新打开。`,
+    )
+    return
   }
+
+  // Do not reload here. The database can contain only part of the requested
+  // tag set, while the editor still has the exact selection that must be retried.
+  ElMessage.error(`${error.message}${publishNote}`)
 }
 
 async function save(input: PostDraftInput) {
@@ -113,6 +158,10 @@ async function save(input: PostDraftInput) {
     await syncSavedPost(id)
     ElMessage.success('草稿已保存。')
   } catch (error) {
+    if (error instanceof PostSavePartialError) {
+      await recoverPartialSave(error)
+      return
+    }
     ElMessage.error(error instanceof Error ? error.message : '保存失败。')
   } finally {
     saving.value = false
@@ -130,6 +179,10 @@ async function saveAndPublish(input: PostDraftInput) {
     await syncSavedPost(savedId)
     ElMessage.success('最新内容已保存并发布。')
   } catch (error) {
+    if (error instanceof PostSavePartialError) {
+      await recoverPartialSave(error, true)
+      return
+    }
     if (savedId) {
       try {
         await syncSavedPost(savedId)

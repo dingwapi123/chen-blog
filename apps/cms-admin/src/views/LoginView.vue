@@ -104,14 +104,16 @@ async function submit() {
               type="password"
             />
           </ElFormItem>
-          <ElAlert
-            v-if="errorMessage || routeMessage"
-            class="login-form__alert"
-            :closable="false"
-            :title="errorMessage || routeMessage"
-            type="error"
-            show-icon
-          />
+          <div class="login-form__feedback">
+            <ElAlert
+              v-if="errorMessage || routeMessage"
+              class="login-form__alert"
+              :closable="false"
+              :title="errorMessage || routeMessage"
+              type="error"
+              show-icon
+            />
+          </div>
           <ElButton
             class="login-form__submit"
             :disabled="!email || !password"
@@ -337,8 +339,13 @@ async function submit() {
   font-size: 0.82rem;
 }
 
+.login-form__feedback {
+  min-height: 3.5rem;
+}
+
 .login-form__alert {
-  margin: 0 0 1rem;
+  width: 100%;
+  margin: 0;
 }
 
 .login-form__submit {

@@ -20,6 +20,7 @@ const router = useRouter()
 const { signOut, user } = useAuth()
 const sidebar = useTemplateRef<SidebarExposed>('sidebar')
 const topbar = useTemplateRef<TopbarExposed>('topbar')
+const mainContent = useTemplateRef<HTMLElement>('mainContent')
 
 const menuOpen = shallowRef(false)
 const isMobile = shallowRef(false)
@@ -38,14 +39,19 @@ function updateViewport(event?: MediaQueryListEvent) {
   if (!isMobile.value) menuOpen.value = false
 }
 
-function closeMenu(restoreFocus = false) {
+function closeMenu(focusTarget?: 'trigger' | 'main') {
   menuOpen.value = false
-  if (restoreFocus) void nextTick(() => topbar.value?.focusMenuButton())
+  if (focusTarget) {
+    void nextTick(() => {
+      if (focusTarget === 'trigger') topbar.value?.focusMenuButton()
+      else mainContent.value?.focus()
+    })
+  }
 }
 
 function toggleMenu() {
   if (menuOpen.value) {
-    closeMenu()
+    closeMenu('trigger')
     return
   }
   menuOpen.value = true
@@ -60,7 +66,7 @@ function handleGlobalKeydown(event: KeyboardEvent) {
   if (!isMobile.value || !menuOpen.value) return
   if (event.key === 'Escape') {
     event.preventDefault()
-    closeMenu(true)
+    closeMenu('trigger')
     return
   }
   if (event.key !== 'Tab') return
@@ -92,7 +98,7 @@ watch(menuOpen, async (open) => {
 })
 
 watch(() => route.fullPath, () => {
-  if (menuOpen.value) closeMenu()
+  if (menuOpen.value) closeMenu('main')
 })
 
 onMounted(() => {
@@ -133,7 +139,7 @@ async function logout() {
       :logging-out="loggingOut"
       :mobile="isMobile"
       :mobile-open="menuOpen"
-      @close="closeMenu()"
+      @close="closeMenu"
       @logout="logout"
       @toggle-collapse="toggleSidebar"
     />
@@ -144,7 +150,7 @@ async function logout() {
       aria-label="关闭导航菜单"
       tabindex="-1"
       type="button"
-      @click="closeMenu(true)"
+      @click="closeMenu('trigger')"
     />
 
     <div
@@ -161,7 +167,7 @@ async function logout() {
         :title="pageTitle"
         @toggle-menu="toggleMenu"
       />
-      <main id="cms-main-content" class="admin-shell__main" tabindex="-1">
+      <main id="cms-main-content" ref="mainContent" class="admin-shell__main" tabindex="-1">
         <slot />
       </main>
     </div>
@@ -198,7 +204,7 @@ async function logout() {
   z-index: 25;
   inset: 0;
   border: 0;
-  background: color-mix(in srgb, #071812 54%, transparent);
+  background: var(--scrim);
   backdrop-filter: blur(2px);
 }
 

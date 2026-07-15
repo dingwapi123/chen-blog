@@ -167,16 +167,14 @@ async function remove(item: TaxonomyItem) {
   if (deletingId.value) return
   const kind = props.kind
   const kindTitle = title.value
-  const impact = item.usage_count
-    ? `当前有 ${item.usage_count} 篇文章使用它。`
-    : '当前没有文章使用它。'
-  const behavior = kind === 'categories'
-    ? '删除后相关文章会变为未分类。'
-    : '删除后相关文章会移除此标签。'
+  if (item.usage_count) {
+    ElMessage.warning(`还有 ${item.usage_count} 篇文章使用此${kindTitle}，请先从文章中移除。`)
+    return
+  }
 
   try {
     await ElMessageBox.confirm(
-      `${impact}${behavior}`,
+      `当前没有文章使用它。删除后无法恢复。`,
       `删除${kindTitle}“${item.name}”？`,
       {
         confirmButtonText: '确认删除',
@@ -287,8 +285,10 @@ async function remove(item: TaxonomyItem) {
                   <ElButton
                     :aria-label="`删除${title}：${row.name}`"
                     circle
+                    :disabled="row.usage_count > 0"
                     link
                     :loading="deletingId === row.id"
+                    :title="row.usage_count ? `请先从 ${row.usage_count} 篇文章中移除` : `删除${title}`"
                     type="danger"
                     @click="remove(row)"
                   >
@@ -308,7 +308,15 @@ async function remove(item: TaxonomyItem) {
                 <small>{{ item.usage_count }} 篇文章</small>
                 <div class="taxonomy-mobile-actions">
                   <ElButton size="small" @click="openEditor(item)"><Pencil :size="14" />编辑</ElButton>
-                  <ElButton :loading="deletingId === item.id" size="small" type="danger" plain @click="remove(item)">
+                  <ElButton
+                    :disabled="item.usage_count > 0"
+                    :loading="deletingId === item.id"
+                    size="small"
+                    :title="item.usage_count ? `请先从 ${item.usage_count} 篇文章中移除` : `删除${title}`"
+                    type="danger"
+                    plain
+                    @click="remove(item)"
+                  >
                     <Trash2 v-if="deletingId !== item.id" :size="14" />删除
                   </ElButton>
                 </div>

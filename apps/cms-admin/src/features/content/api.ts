@@ -59,6 +59,27 @@ export type DashboardOverview = {
   recentPosts: AdminPostListItem[]
 }
 
+export type PostTagSyncStage = 'clear-existing' | 'insert-selected'
+
+/**
+ * The post row has already been persisted when this error is raised. Keeping the
+ * id on the error lets a new-post screen recover onto the edit route instead of
+ * attempting a second INSERT with the same slug.
+ */
+export class PostSavePartialError extends Error {
+  readonly postId: string
+  readonly tagSyncStage: PostTagSyncStage
+
+  constructor(options: { postId: string; tagSyncStage: PostTagSyncStage; cause: unknown }) {
+    super('文章主体已保存，但标签同步失败。请重新保存以重试标签同步。', {
+      cause: options.cause,
+    })
+    this.name = 'PostSavePartialError'
+    this.postId = options.postId
+    this.tagSyncStage = options.tagSyncStage
+  }
+}
+
 export const DEFAULT_POST_LIST_QUERY: Readonly<PostListQuery> = Object.freeze({
   page: 1,
   pageSize: 20,
@@ -251,7 +272,7 @@ export async function getPost(id: string) {
   return data ? normalizePostStatus(data) : null
 }
 
-export async function savePost(id: string | undefined, input: PostDraftInput) {
+export async function savePost(id: string | undefined, input: PostDraftInput): Promise<string> {
   await assertAllowedContent(input.content, {
     allowedImagePrefixes: [getPostImagesPublicUrlPrefix(getSupabaseUrl())],
   })
@@ -289,7 +310,11 @@ export async function savePost(id: string | undefined, input: PostDraftInput) {
     .delete()
     .eq('post_id', postId)
   if (deleteError) {
-    throw new Error('文章主体已保存，但标签同步失败。', { cause: deleteError })
+    throw new PostSavePartialError({
+      postId,
+      tagSyncStage: 'clear-existing',
+      cause: deleteError,
+    })
   }
 
   if (input.tagIds.length) {
@@ -297,7 +322,11 @@ export async function savePost(id: string | undefined, input: PostDraftInput) {
       .from('post_tags')
       .insert(input.tagIds.map(tag_id => ({ post_id: postId, tag_id }) satisfies TablesInsert<'post_tags'>))
     if (tagError) {
-      throw new Error('文章主体已保存，但标签同步失败。', { cause: tagError })
+      throw new PostSavePartialError({
+        postId,
+        tagSyncStage: 'insert-selected',
+        cause: tagError,
+      })
     }
   }
 
@@ -373,24 +402,45 @@ export async function listTaxonomy(kind: 'categories' | 'tags') {
 }
 
 export async function saveTaxonomy(kind: 'categories' | 'tags', item: TaxonomyDraft) {
+  const label = kind === 'categories' ? '分类' : '标签'
   if (kind === 'categories') {
     const values = {
       name: item.name,
       slug: item.slug,
       description: item.description ?? '',
     }
-    const { error } = item.id
-      ? await getSupabase().from('categories').update(values).eq('id', item.id)
-      : await getSupabase().from('categories').insert(values)
+    if (!item.id) {
+      const { error } = await getSupabase().from('categories').insert(values)
+      if (error) throw error
+      return
+    }
+
+    const { data, error } = await getSupabase()
+      .from('categories')
+      .update(values)
+      .eq('id', item.id)
+      .select('id')
+      .maybeSingle()
     if (error) throw error
+    if (!data) throw new Error(`${label}不存在，或正被已发布文章使用；请先将相关文章转为草稿。`)
     return
   }
 
   const values = { name: item.name, slug: item.slug }
-  const { error } = item.id
-    ? await getSupabase().from('tags').update(values).eq('id', item.id)
-    : await getSupabase().from('tags').insert(values)
+  if (!item.id) {
+    const { error } = await getSupabase().from('tags').insert(values)
+    if (error) throw error
+    return
+  }
+
+  const { data, error } = await getSupabase()
+    .from('tags')
+    .update(values)
+    .eq('id', item.id)
+    .select('id')
+    .maybeSingle()
   if (error) throw error
+  if (!data) throw new Error(`${label}不存在，或正被已发布文章使用；请先将相关文章转为草稿。`)
 }
 
 export async function deleteTaxonomy(kind: 'categories' | 'tags', id: string) {
@@ -401,7 +451,7 @@ export async function deleteTaxonomy(kind: 'categories' | 'tags', id: string) {
     .select('id')
     .maybeSingle()
   if (error) throw error
-  if (!data) throw new Error('分类或标签不存在，可能已被删除。')
+  if (!data) throw new Error('分类或标签不存在，或仍被文章使用；请先从所有文章移除后再删除。')
 }
 
 export async function listMedia() {
@@ -424,7 +474,7 @@ export async function updateMediaAltText(id: string, altText: string) {
     .select('id,bucket_id,object_path,alt_text,mime_type,size_bytes,created_at')
     .maybeSingle()
   if (error) throw error
-  if (!data) throw new Error('媒体不存在或已无法访问。')
+  if (!data) throw new Error('媒体不存在，或正作为已发布文章的封面；请先将文章转为草稿。')
   return data
 }
 

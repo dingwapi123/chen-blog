@@ -301,7 +301,7 @@ function handleCommand(id: string, command: RowCommand) {
   display: none;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 820px) {
   .post-table {
     display: none;
   }
