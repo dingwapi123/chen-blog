@@ -1,7 +1,6 @@
 import type { Database } from '@chen-blog/database-types'
 import type {
   CategorySummary,
-  MediaRecord,
   PostDetail,
   PostPreview,
   TagSummary,
@@ -86,13 +85,6 @@ function missingPublicConfiguration(): never {
     statusCode: 500,
     statusMessage: 'Supabase public configuration is missing.',
   })
-}
-
-export function getPublicMediaUrl(media: MediaRecord): string {
-  const client = getClient()
-  if (!client) return ''
-
-  return client.storage.from(media.bucketId).getPublicUrl(media.objectPath).data.publicUrl
 }
 
 export async function fetchPublishedPosts(): Promise<PostPreview[]> {

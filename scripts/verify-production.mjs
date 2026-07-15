@@ -148,6 +148,7 @@ assertIncludes(sitemap.body, '/posts/', 'sitemap article URLs')
 
 const sitemapUrls = [...sitemap.body.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1])
 assert.ok(sitemapUrls.length > 0, 'sitemap must contain public URLs')
+const verifiedArticles = []
 for (const url of sitemapUrls) {
   const page = await request(blogUrl, url)
   const pathname = new URL(url).pathname
@@ -158,8 +159,31 @@ for (const url of sitemapUrls) {
     assertIncludes(page.body, '<meta property="og:type" content="article">', `${pathname} article Open Graph type`)
     assertIncludes(page.body, '<meta property="article:published_time"', `${pathname} publication time`)
     assertIncludes(page.body, '<meta property="article:modified_time"', `${pathname} modification time`)
+    verifiedArticles.push({ pathname, ...page })
   }
 }
+
+const richArticle = verifiedArticles.find(({ body }) => (
+  body.includes('class="article-cover__image"')
+  && body.includes('class="article-toc"')
+  && (body.match(/<img\b[^>]*data-nuxt-img[^>]*>/g) ?? []).length >= 2
+))
+assert.ok(richArticle, 'at least one public article must exercise a cover, a table of contents, and a Markdown image')
+
+const richArticleImages = richArticle.body.match(/<img\b[^>]*data-nuxt-img[^>]*>/g) ?? []
+assert.ok(richArticleImages.every(tag => /\balt="[^"]+"/.test(tag)), `${richArticle.pathname} optimized images need alt text`)
+assert.ok(richArticleImages.every(tag => /\bsrcset="[^"]+"/.test(tag)), `${richArticle.pathname} optimized images need srcset`)
+
+const richArticleHeadingIds = [...richArticle.body.matchAll(/<h[23]\b[^>]*\bid="([^"]+)"/g)].map(match => match[1])
+assert.ok(richArticleHeadingIds.length >= 3, `${richArticle.pathname} must expose a meaningful heading hierarchy`)
+assert.equal(new Set(richArticleHeadingIds).size, richArticleHeadingIds.length, `${richArticle.pathname} heading IDs must be unique`)
+
+const coverTag = richArticleImages.find(tag => tag.includes('class="article-cover__image"'))
+const optimizedCoverPath = coverTag?.match(/\bsrc="([^"]+)"/)?.[1]?.replaceAll('&amp;', '&')
+assert.ok(optimizedCoverPath?.startsWith('/_ipx/'), `${richArticle.pathname} cover must use the Nuxt image endpoint`)
+const optimizedCover = await request(blogUrl, optimizedCoverPath)
+assertStatus(optimizedCover, 200, `${richArticle.pathname} optimized cover`)
+assertIncludes(optimizedCover.response.headers.get('content-type'), 'image/', `${richArticle.pathname} optimized cover content type`)
 
 const publicNotFound = await request(blogUrl, '/posts/production-verifier-not-found')
 assertStatus(publicNotFound, 404, 'public HTML not found')

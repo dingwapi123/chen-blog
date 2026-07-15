@@ -16,10 +16,11 @@ const { data: articleData } = await useAsyncData(
 const post = computed(() => articleData.value?.post ?? null)
 const articleHeadings = computed(() => articleData.value?.headings ?? [])
 const isNotFound = computed(() => !post.value)
+const resolvePublicMediaUrl = usePublicMediaUrl()
 
 useNotFoundResponse(isNotFound, '文章不存在或尚未发布。')
 
-const coverUrl = computed(() => post.value?.cover ? getPublicMediaUrl(post.value.cover) : '')
+const coverUrl = computed(() => post.value?.cover ? resolvePublicMediaUrl(post.value.cover) : '')
 const { data: navigation } = await useAsyncData(
   () => `post-navigation-${postSlug.value}`,
   () => post.value
