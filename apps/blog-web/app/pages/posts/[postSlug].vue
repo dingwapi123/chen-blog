@@ -5,27 +5,36 @@ import { formatDate } from '@chen-blog/shared-utils'
 const route = useRoute()
 const postSlug = computed(() => String(route.params.postSlug))
 const { data: post } = await useAsyncData(() => `post-${postSlug.value}`, () => fetchPublishedPost(postSlug.value))
+const isNotFound = computed(() => !post.value)
 
-if (!post.value) throw createError({ statusCode: 404, statusMessage: '文章不存在或尚未发布。' })
+useNotFoundResponse(isNotFound, '文章不存在或尚未发布。')
 
 const coverUrl = computed(() => post.value?.cover ? getPublicMediaUrl(post.value.cover) : '')
 const { data: navigation } = await useAsyncData(
   () => `post-navigation-${postSlug.value}`,
-  () => fetchArticleNavigation(post.value!),
+  () => post.value
+    ? fetchArticleNavigation(post.value)
+    : Promise.resolve({ previous: null, next: null }),
 )
 
 usePageSeo({
-  title: computed(() => post.value?.title ?? '文章'),
-  description: computed(() => post.value?.summary ?? ''),
+  title: computed(() => post.value?.title ?? '没有找到这篇文章'),
+  description: computed(() => post.value?.summary ?? '这篇文章可能尚未发布，或已经移动。'),
   image: computed(() => coverUrl.value || undefined),
   type: 'article',
   publishedTime: computed(() => post.value?.publishedAt),
   modifiedTime: computed(() => post.value?.updatedAt),
+  noindex: isNotFound,
 })
 </script>
 
 <template>
-  <main class="article-page">
+  <PublicNotFound
+    v-if="isNotFound"
+    description="这篇文章可能尚未发布，或已经移动。"
+    title="没有找到这篇文章"
+  />
+  <main v-else class="article-page">
     <article v-if="post" class="article-shell">
       <NuxtLink class="back-link" to="/posts"><ArrowLeft :size="16" aria-hidden="true" /> 返回文章</NuxtLink>
       <header class="article-header">

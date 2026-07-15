@@ -9,7 +9,7 @@ type PageSeoOptions = {
   type?: 'article' | 'website'
   publishedTime?: MaybeRefOrGetter<string | undefined>
   modifiedTime?: MaybeRefOrGetter<string | undefined>
-  noindex?: boolean
+  noindex?: MaybeRefOrGetter<boolean>
 }
 
 function safeOrigin(configuredUrl: string, requestOrigin: string): string {
@@ -38,7 +38,7 @@ export function usePageSeo(options: PageSeoOptions): void {
   useSeoMeta({
     title: fullTitle,
     description: () => toValue(options.description),
-    robots: options.noindex ? 'noindex, nofollow' : 'index, follow',
+    robots: () => options.noindex && toValue(options.noindex) ? 'noindex, nofollow' : 'index, follow',
     ogTitle: fullTitle,
     ogDescription: () => toValue(options.description),
     ogSiteName: site.shortName,
@@ -51,9 +51,9 @@ export function usePageSeo(options: PageSeoOptions): void {
     articleModifiedTime: () => options.modifiedTime ? toValue(options.modifiedTime) : undefined,
   })
 
-  if (!options.noindex) {
-    useHead(() => ({
-      link: [{ key: 'canonical', rel: 'canonical', href: canonical.value }],
-    }))
-  }
+  useHead(() => ({
+    link: options.noindex && toValue(options.noindex)
+      ? []
+      : [{ key: 'canonical', rel: 'canonical', href: canonical.value }],
+  }))
 }
