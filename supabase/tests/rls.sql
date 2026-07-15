@@ -303,11 +303,64 @@ set local role anon;
 set local request.jwt.claim.sub = '';
 set local request.jwt.claim.role = 'anon';
 
-select is((select count(*)::integer from public.posts), 1, 'anon reads only the public post');
-select is((select count(*)::integer from public.categories), 1, 'anon reads only categories used by public posts');
-select is((select count(*)::integer from public.tags), 1, 'anon reads only tags used by public posts');
-select is((select count(*)::integer from public.post_tags), 1, 'anon reads only public post-tag relations');
-select is((select count(*)::integer from public.media), 1, 'anon reads only public cover media');
+select is(
+  (
+    select count(*)::integer from public.posts
+    where id = any (array[
+      '99999999-9999-4999-8999-999999999931',
+      '99999999-9999-4999-8999-999999999932',
+      '99999999-9999-4999-8999-999999999933',
+      '99999999-9999-4999-8999-999999999934'
+    ]::uuid[])
+  ),
+  1,
+  'anon reads only the public fixture post'
+);
+select is(
+  (
+    select count(*)::integer from public.categories
+    where id = any (array[
+      '99999999-9999-4999-8999-999999999901',
+      '99999999-9999-4999-8999-999999999902'
+    ]::uuid[])
+  ),
+  1,
+  'anon reads only fixture categories used by public posts'
+);
+select is(
+  (
+    select count(*)::integer from public.tags
+    where id = any (array[
+      '99999999-9999-4999-8999-999999999911',
+      '99999999-9999-4999-8999-999999999912'
+    ]::uuid[])
+  ),
+  1,
+  'anon reads only fixture tags used by public posts'
+);
+select is(
+  (
+    select count(*)::integer from public.post_tags
+    where post_id = any (array[
+      '99999999-9999-4999-8999-999999999931',
+      '99999999-9999-4999-8999-999999999932',
+      '99999999-9999-4999-8999-999999999933'
+    ]::uuid[])
+  ),
+  1,
+  'anon reads only public fixture post-tag relations'
+);
+select is(
+  (
+    select count(*)::integer from public.media
+    where id = any (array[
+      '99999999-9999-4999-8999-999999999921',
+      '99999999-9999-4999-8999-999999999922'
+    ]::uuid[])
+  ),
+  1,
+  'anon reads only public fixture cover media'
+);
 
 select throws_ok(
   $$select count(*) from public.profiles$$,
@@ -330,11 +383,64 @@ set local role authenticated;
 set local request.jwt.claim.sub = '99999999-9999-4999-8999-999999999992';
 set local request.jwt.claim.role = 'authenticated';
 
-select is((select count(*)::integer from public.posts), 1, 'a non-owner reads only the public post');
-select is((select count(*)::integer from public.categories), 1, 'a non-owner reads only public categories');
-select is((select count(*)::integer from public.tags), 1, 'a non-owner reads only public tags');
-select is((select count(*)::integer from public.post_tags), 1, 'a non-owner reads only public post-tag relations');
-select is((select count(*)::integer from public.media), 1, 'a non-owner reads only public cover media');
+select is(
+  (
+    select count(*)::integer from public.posts
+    where id = any (array[
+      '99999999-9999-4999-8999-999999999931',
+      '99999999-9999-4999-8999-999999999932',
+      '99999999-9999-4999-8999-999999999933',
+      '99999999-9999-4999-8999-999999999934'
+    ]::uuid[])
+  ),
+  1,
+  'a non-owner reads only the public fixture post'
+);
+select is(
+  (
+    select count(*)::integer from public.categories
+    where id = any (array[
+      '99999999-9999-4999-8999-999999999901',
+      '99999999-9999-4999-8999-999999999902'
+    ]::uuid[])
+  ),
+  1,
+  'a non-owner reads only public fixture categories'
+);
+select is(
+  (
+    select count(*)::integer from public.tags
+    where id = any (array[
+      '99999999-9999-4999-8999-999999999911',
+      '99999999-9999-4999-8999-999999999912'
+    ]::uuid[])
+  ),
+  1,
+  'a non-owner reads only public fixture tags'
+);
+select is(
+  (
+    select count(*)::integer from public.post_tags
+    where post_id = any (array[
+      '99999999-9999-4999-8999-999999999931',
+      '99999999-9999-4999-8999-999999999932',
+      '99999999-9999-4999-8999-999999999933'
+    ]::uuid[])
+  ),
+  1,
+  'a non-owner reads only public fixture post-tag relations'
+);
+select is(
+  (
+    select count(*)::integer from public.media
+    where id = any (array[
+      '99999999-9999-4999-8999-999999999921',
+      '99999999-9999-4999-8999-999999999922'
+    ]::uuid[])
+  ),
+  1,
+  'a non-owner reads only public fixture cover media'
+);
 select is((select count(*)::integer from public.profiles), 0, 'a non-owner cannot read the owner profile');
 
 select throws_ok(
@@ -372,11 +478,64 @@ set local role authenticated;
 set local request.jwt.claim.sub = '99999999-9999-4999-8999-999999999991';
 set local request.jwt.claim.role = 'authenticated';
 
-select is((select count(*)::integer from public.posts), 4, 'owner reads every post');
-select is((select count(*)::integer from public.categories), 2, 'owner reads every category');
-select is((select count(*)::integer from public.tags), 2, 'owner reads every tag');
-select is((select count(*)::integer from public.post_tags), 3, 'owner reads every post-tag relation');
-select is((select count(*)::integer from public.media), 2, 'owner reads every media row');
+select is(
+  (
+    select count(*)::integer from public.posts
+    where id = any (array[
+      '99999999-9999-4999-8999-999999999931',
+      '99999999-9999-4999-8999-999999999932',
+      '99999999-9999-4999-8999-999999999933',
+      '99999999-9999-4999-8999-999999999934'
+    ]::uuid[])
+  ),
+  4,
+  'owner reads every fixture post'
+);
+select is(
+  (
+    select count(*)::integer from public.categories
+    where id = any (array[
+      '99999999-9999-4999-8999-999999999901',
+      '99999999-9999-4999-8999-999999999902'
+    ]::uuid[])
+  ),
+  2,
+  'owner reads every fixture category'
+);
+select is(
+  (
+    select count(*)::integer from public.tags
+    where id = any (array[
+      '99999999-9999-4999-8999-999999999911',
+      '99999999-9999-4999-8999-999999999912'
+    ]::uuid[])
+  ),
+  2,
+  'owner reads every fixture tag'
+);
+select is(
+  (
+    select count(*)::integer from public.post_tags
+    where post_id = any (array[
+      '99999999-9999-4999-8999-999999999931',
+      '99999999-9999-4999-8999-999999999932',
+      '99999999-9999-4999-8999-999999999933'
+    ]::uuid[])
+  ),
+  3,
+  'owner reads every fixture post-tag relation'
+);
+select is(
+  (
+    select count(*)::integer from public.media
+    where id = any (array[
+      '99999999-9999-4999-8999-999999999921',
+      '99999999-9999-4999-8999-999999999922'
+    ]::uuid[])
+  ),
+  2,
+  'owner reads every fixture media row'
+);
 select is((select count(*)::integer from public.profiles), 1, 'owner reads their own profile');
 
 select lives_ok(
@@ -539,7 +698,20 @@ set local role service_role;
 set local request.jwt.claim.sub = '';
 set local request.jwt.claim.role = 'service_role';
 
-select is((select count(*)::integer from public.posts), 5, 'service role can read posts required by publishing');
+select is(
+  (
+    select count(*)::integer from public.posts
+    where id = any (array[
+      '99999999-9999-4999-8999-999999999931',
+      '99999999-9999-4999-8999-999999999932',
+      '99999999-9999-4999-8999-999999999933',
+      '99999999-9999-4999-8999-999999999934',
+      '99999999-9999-4999-8999-999999999935'
+    ]::uuid[])
+  ),
+  5,
+  'service role can read fixture posts required by publishing'
+);
 
 select lives_ok(
   $$update public.posts
@@ -603,7 +775,20 @@ set local role anon;
 set local request.jwt.claim.sub = '';
 set local request.jwt.claim.role = 'anon';
 
-select is((select count(*)::integer from public.posts), 2, 'anon sees the newly service-published post');
+select is(
+  (
+    select count(*)::integer from public.posts
+    where id = any (array[
+      '99999999-9999-4999-8999-999999999931',
+      '99999999-9999-4999-8999-999999999932',
+      '99999999-9999-4999-8999-999999999933',
+      '99999999-9999-4999-8999-999999999934',
+      '99999999-9999-4999-8999-999999999935'
+    ]::uuid[])
+  ),
+  2,
+  'anon sees the newly service-published fixture post'
+);
 select is(
   (
     select count(*)::integer from public.posts

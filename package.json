@@ -18,7 +18,7 @@
     "db:link": "supabase link --project-ref bpmmrasmlzgoalklakpn",
     "db:push": "supabase db push --linked",
     "db:seed": "supabase db push --linked --include-seed",
-    "db:test": "supabase test db --linked supabase/tests",
+    "db:test": "node scripts/run-remote-database-tests.mjs",
     "db:types": "node scripts/generate-database-types.mjs"
   },
   "devDependencies": {
