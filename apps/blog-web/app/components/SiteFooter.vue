@@ -10,8 +10,8 @@ import { site } from '~/config/site'
         <p class="site-footer__note">写下值得长期保留的理解。</p>
       </div>
       <div class="site-footer__links">
-        <a v-for="link in site.socialLinks" :key="link.label" :href="link.href" rel="noreferrer" target="_blank">{{ link.label }}</a>
-        <a :href="`mailto:${site.email}`">Email</a>
+        <a :href="site.links.github" rel="noreferrer" target="_blank">GitHub</a>
+        <a :href="site.links.rss">RSS</a>
       </div>
     </div>
   </footer>

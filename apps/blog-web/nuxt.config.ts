@@ -9,6 +9,15 @@ function getSupabaseImageDomains(): string[] {
   }
 }
 
+function netlifyContentCache() {
+  return {
+    headers: {
+      'Cache-Control': 'public, max-age=0, must-revalidate',
+      'Netlify-CDN-Cache-Control': 'public, max-age=600, must-revalidate',
+    },
+  }
+}
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -33,6 +42,7 @@ export default defineNuxtConfig({
   sitemap: {
     autoI18n: false,
     sources: ['/api/__sitemap__/urls'],
+    cacheMaxAgeSeconds: 0,
   },
   app: {
     head: {
@@ -63,16 +73,16 @@ export default defineNuxtConfig({
     },
   },
   routeRules: {
-    '/': { isr: 600 },
-    '/posts': { isr: 600 },
-    '/posts/**': { isr: 600 },
-    '/archive': { isr: 600 },
-    '/about': { isr: 600 },
-    '/categories/**': { isr: 600 },
-    '/tags/**': { isr: 600 },
-    '/rss.xml': { isr: 600 },
-    '/sitemap.xml': { isr: 600 },
-    '/robots.txt': { isr: 600 },
+    '/': netlifyContentCache(),
+    '/posts': netlifyContentCache(),
+    '/posts/**': netlifyContentCache(),
+    '/archive': netlifyContentCache(),
+    '/about': netlifyContentCache(),
+    '/categories/**': netlifyContentCache(),
+    '/tags/**': netlifyContentCache(),
+    '/rss.xml': netlifyContentCache(),
+    '/sitemap.xml': netlifyContentCache(),
+    '/robots.txt': netlifyContentCache(),
     '/api/**': { cache: false },
   },
 })
