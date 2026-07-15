@@ -1,25 +1,35 @@
 <script setup lang="ts">
 import { ElMessage } from 'element-plus'
-import { FileText, FolderTree, Image, LogOut, Menu, Tags, UserRound, X } from '@lucide/vue'
-import { nextTick, onBeforeUnmount, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, nextTick, onBeforeUnmount, onMounted, shallowRef, useTemplateRef, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import AdminSidebar from '@/components/layout/AdminSidebar.vue'
+import AdminTopbar from '@/components/layout/AdminTopbar.vue'
 import { useAuth } from '@/composables/useAuth'
 
-const links = [
-  { label: '文章', to: '/', icon: FileText },
-  { label: '分类', to: '/categories', icon: FolderTree },
-  { label: '标签', to: '/tags', icon: Tags },
-  { label: '媒体', to: '/media', icon: Image },
-  { label: '账户', to: '/account', icon: UserRound },
-]
+interface SidebarExposed {
+  focusFirst: () => void
+  getFocusableItems: () => HTMLElement[]
+}
+
+interface TopbarExposed {
+  focusMenuButton: () => void
+}
+
+const route = useRoute()
+const router = useRouter()
+const { signOut, user } = useAuth()
+const sidebar = useTemplateRef<SidebarExposed>('sidebar')
+const topbar = useTemplateRef<TopbarExposed>('topbar')
 
 const menuOpen = shallowRef(false)
 const isMobile = shallowRef(false)
 const loggingOut = shallowRef(false)
-const sidebar = useTemplateRef<HTMLElement>('sidebar')
-const menuButton = useTemplateRef<HTMLButtonElement>('menuButton')
-const router = useRouter()
-const { signOut } = useAuth()
+const sidebarCollapsed = shallowRef(false)
+
+const pageTitle = computed(() => typeof route.meta.title === 'string' ? route.meta.title : '内容管理')
+const pageDescription = computed(() => typeof route.meta.description === 'string' ? route.meta.description : '')
+const blogUrl = import.meta.env.VITE_BLOG_URL || 'http://localhost:3000'
+
 let mediaQuery: MediaQueryList | undefined
 let previousBodyOverflow = ''
 
@@ -28,15 +38,9 @@ function updateViewport(event?: MediaQueryListEvent) {
   if (!isMobile.value) menuOpen.value = false
 }
 
-function getFocusableItems() {
-  return [...(sidebar.value?.querySelectorAll<HTMLElement>(
-    'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-  ) ?? [])]
-}
-
 function closeMenu(restoreFocus = false) {
   menuOpen.value = false
-  if (restoreFocus) void nextTick(() => menuButton.value?.focus())
+  if (restoreFocus) void nextTick(() => topbar.value?.focusMenuButton())
 }
 
 function toggleMenu() {
@@ -45,6 +49,11 @@ function toggleMenu() {
     return
   }
   menuOpen.value = true
+}
+
+function toggleSidebar() {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+  localStorage.setItem('chen-blog-cms-sidebar-collapsed', String(sidebarCollapsed.value))
 }
 
 function handleGlobalKeydown(event: KeyboardEvent) {
@@ -56,7 +65,7 @@ function handleGlobalKeydown(event: KeyboardEvent) {
   }
   if (event.key !== 'Tab') return
 
-  const focusable = getFocusableItems()
+  const focusable = sidebar.value?.getFocusableItems() ?? []
   if (!focusable.length) return
   const first = focusable[0]!
   const last = focusable.at(-1)!
@@ -79,11 +88,16 @@ watch(menuOpen, async (open) => {
   previousBodyOverflow = document.body.style.overflow
   document.body.style.overflow = 'hidden'
   await nextTick()
-  getFocusableItems()[0]?.focus()
+  sidebar.value?.focusFirst()
+})
+
+watch(() => route.fullPath, () => {
+  if (menuOpen.value) closeMenu()
 })
 
 onMounted(() => {
-  mediaQuery = window.matchMedia('(max-width: 760px)')
+  sidebarCollapsed.value = localStorage.getItem('chen-blog-cms-sidebar-collapsed') === 'true'
+  mediaQuery = window.matchMedia('(max-width: 820px)')
   updateViewport()
   mediaQuery.addEventListener('change', updateViewport)
   window.addEventListener('keydown', handleGlobalKeydown)
@@ -110,39 +124,23 @@ async function logout() {
 </script>
 
 <template>
-  <div class="admin-shell">
-    <aside
-      id="cms-navigation"
+  <a class="skip-link" href="#cms-main-content">跳到主要内容</a>
+  <div class="admin-shell" :class="{ 'admin-shell--mobile': isMobile }">
+    <AdminSidebar
       ref="sidebar"
-      class="sidebar"
-      :class="{ 'sidebar--open': menuOpen }"
-      :aria-hidden="isMobile && !menuOpen ? 'true' : undefined"
-      :inert="isMobile && !menuOpen ? true : undefined"
-    >
-      <RouterLink class="brand" to="/" @click="closeMenu()">
-        Chen Blog<span>CMS</span>
-      </RouterLink>
-      <nav aria-label="CMS 主要导航">
-        <RouterLink
-          v-for="link in links"
-          :key="link.to"
-          :to="link.to"
-          class="nav-link"
-          @click="closeMenu()"
-        >
-          <component :is="link.icon" :size="18" aria-hidden="true" />
-          {{ link.label }}
-        </RouterLink>
-      </nav>
-      <button class="logout" :disabled="loggingOut" type="button" @click="logout">
-        <LogOut :size="17" aria-hidden="true" />
-        {{ loggingOut ? '正在退出…' : '退出登录' }}
-      </button>
-    </aside>
+      :collapsed="sidebarCollapsed"
+      :email="user?.email"
+      :logging-out="loggingOut"
+      :mobile="isMobile"
+      :mobile-open="menuOpen"
+      @close="closeMenu()"
+      @logout="logout"
+      @toggle-collapse="toggleSidebar"
+    />
 
     <button
       v-if="isMobile && menuOpen"
-      class="nav-scrim"
+      class="admin-shell__scrim"
       aria-label="关闭导航菜单"
       tabindex="-1"
       type="button"
@@ -150,27 +148,20 @@ async function logout() {
     />
 
     <div
-      class="workspace"
+      class="admin-shell__workspace"
       :aria-hidden="isMobile && menuOpen ? 'true' : undefined"
       :inert="isMobile && menuOpen ? true : undefined"
     >
-      <header class="topbar">
-        <button
-          ref="menuButton"
-          class="mobile-menu"
-          type="button"
-          aria-controls="cms-navigation"
-          :aria-expanded="menuOpen"
-          :aria-label="menuOpen ? '关闭菜单' : '打开菜单'"
-          @click="toggleMenu"
-        >
-          <X v-if="menuOpen" :size="19" aria-hidden="true" />
-          <Menu v-else :size="19" aria-hidden="true" />
-        </button>
-        <span class="topbar__title">内容管理</span>
-        <ThemeToggle />
-      </header>
-      <main class="workspace__main">
+      <AdminTopbar
+        ref="topbar"
+        :blog-url="blogUrl"
+        :description="pageDescription"
+        :mobile="isMobile"
+        :mobile-menu-open="menuOpen"
+        :title="pageTitle"
+        @toggle-menu="toggleMenu"
+      />
+      <main id="cms-main-content" class="admin-shell__main" tabindex="-1">
         <slot />
       </main>
     </div>
@@ -181,144 +172,39 @@ async function logout() {
 .admin-shell {
   display: grid;
   min-height: 100svh;
-  grid-template-columns: 14.5rem minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr);
 }
 
-.sidebar {
-  position: sticky;
-  top: 0;
-  display: flex;
-  height: 100svh;
-  flex-direction: column;
-  padding: 1.2rem;
-  background: var(--surface-low);
+.admin-shell--mobile {
+  grid-template-columns: minmax(0, 1fr);
 }
 
-.brand {
-  margin: 0.2rem 0.35rem 2rem;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-}
-
-.brand span {
-  margin-left: 0.4rem;
-  color: var(--accent);
-  font-size: 0.7rem;
-  letter-spacing: 0.09em;
-}
-
-.sidebar nav {
-  display: grid;
-  gap: 0.25rem;
-}
-
-.nav-link,
-.logout {
-  display: flex;
-  min-height: 2.5rem;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.65rem 0.7rem;
-  border: 0;
-  border-radius: 0.45rem;
-  background: transparent;
-  color: var(--on-surface-muted);
-  font-size: 0.9rem;
-  text-align: left;
-}
-
-.nav-link:hover,
-.nav-link.router-link-active {
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-weight: 700;
-}
-
-.logout {
-  margin-top: auto;
-}
-
-.logout:hover {
-  color: var(--danger);
-}
-
-.workspace {
+.admin-shell__workspace {
   min-width: 0;
 }
 
-.topbar {
-  display: flex;
-  min-height: 4rem;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 1.5rem;
-  background: color-mix(in srgb, var(--surface) 90%, transparent);
-  backdrop-filter: blur(20px);
+.admin-shell__main {
+  width: 100%;
+  min-height: calc(100svh - var(--topbar-height));
+  padding: clamp(1.35rem, 3vw, 2.5rem) clamp(1rem, 3vw, 2.5rem) 4rem;
 }
 
-.topbar__title {
-  color: var(--on-surface-muted);
-  font-size: 0.86rem;
-  font-weight: 700;
+.admin-shell__main:focus {
+  outline: none;
 }
 
-.workspace__main {
-  width: min(100% - 3rem, 78rem);
-  margin: 0 auto;
-  padding: 2.5rem 0;
-}
-
-.mobile-menu {
-  display: none;
-  width: 2.5rem;
-  height: 2.5rem;
-  place-items: center;
-  padding: 0;
-  border: 0;
-  border-radius: 0.4rem;
-  background: transparent;
-  color: var(--on-surface);
-}
-
-.nav-scrim {
+.admin-shell__scrim {
   position: fixed;
-  z-index: 20;
+  z-index: 25;
   inset: 0;
   border: 0;
-  background: color-mix(in srgb, var(--on-surface) 28%, transparent);
+  background: color-mix(in srgb, #071812 54%, transparent);
+  backdrop-filter: blur(2px);
 }
 
-@media (max-width: 760px) {
-  .admin-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .sidebar {
-    position: fixed;
-    z-index: 30;
-    width: min(16rem, calc(100vw - 3rem));
-    transform: translateX(-101%);
-    transition: transform 160ms ease;
-  }
-
-  .sidebar--open {
-    transform: translateX(0);
-    box-shadow: 0 4px 24px color-mix(in srgb, var(--accent) 12%, transparent);
-  }
-
-  .topbar {
-    position: sticky;
-    z-index: 10;
-    top: 0;
-  }
-
-  .mobile-menu {
-    display: grid;
-  }
-
-  .workspace__main {
-    width: min(100% - 2rem, 78rem);
-    padding: 1.75rem 0;
+@media (max-width: 420px) {
+  .admin-shell__main {
+    padding: 1.1rem 0.75rem 3rem;
   }
 }
 </style>
