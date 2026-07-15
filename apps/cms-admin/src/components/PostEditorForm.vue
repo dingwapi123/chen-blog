@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import type { FormInstance, FormRules } from 'element-plus'
-import { ImagePlus, RotateCcw, Send } from '@lucide/vue'
+import { Check, Circle, Clock3, FileText, ImagePlus, RotateCcw, Send } from '@lucide/vue'
 import { computed, reactive, shallowRef, useTemplateRef, watch } from 'vue'
 import type { PostDraftInput } from '@chen-blog/shared-types'
-import { toSlug } from '@chen-blog/shared-utils'
+import { calculateReadingMinutes, toSlug } from '@chen-blog/shared-utils'
 import MarkdownEditor, { type MarkdownEditorExpose } from '@/components/MarkdownEditor.vue'
 import MediaPickerDialog from '@/components/MediaPickerDialog.vue'
+import StatusBadge from '@/components/common/StatusBadge.vue'
 import {
   getPublicImageUrl,
   type AdminMedia,
@@ -65,6 +66,20 @@ const coverSelection = computed({
   get: () => model.coverMediaId ?? '',
   set: (value: string) => { model.coverMediaId = value || null },
 })
+const coverMedia = computed(() => (
+  props.media.find(item => item.id === model.coverMediaId) ?? null
+))
+const contentCharacters = computed(() => model.content.trim().length)
+const headingCount = computed(() => (
+  model.content.match(/^#{1,6}\s+.+$/gmu)?.length ?? 0
+))
+const readingMinutes = computed(() => calculateReadingMinutes(model.content))
+const publishChecks = computed(() => [
+  { label: '文章标题', complete: Boolean(model.title.trim()) },
+  { label: '有效 Slug', complete: Boolean(model.slug) && isValidSlug(model.slug) },
+  { label: '正文内容', complete: Boolean(model.content.trim()) },
+  { label: '摘要（建议）', complete: Boolean(model.summary.trim()) },
+])
 
 const rules: FormRules<PostDraftInput> = {
   title: [
@@ -168,6 +183,12 @@ async function submit(action: 'save' | 'publish') {
         show-icon
       />
 
+      <section class="document-fields" aria-labelledby="document-fields-title">
+        <div class="section-heading">
+          <span id="document-fields-title">文章信息</span>
+          <small>标题与公开地址</small>
+        </div>
+
       <ElFormItem label="标题" prop="title">
         <ElInput
           v-model="model.title"
@@ -204,6 +225,7 @@ async function submit(action: 'save' | 'publish') {
           :autosize="{ minRows: 3, maxRows: 8 }"
         />
       </ElFormItem>
+      </section>
 
       <section class="content-field" aria-labelledby="content-field-title">
         <div class="content-field__heading">
@@ -226,6 +248,11 @@ async function submit(action: 'save' | 'publish') {
             从媒体库插入图片
           </ElButton>
         </div>
+        <div class="content-metrics" aria-label="正文统计">
+          <span><FileText :size="14" aria-hidden="true" />{{ contentCharacters }} 字符</span>
+          <span>{{ headingCount }} 个标题</span>
+          <span><Clock3 :size="14" aria-hidden="true" />约 {{ readingMinutes }} 分钟阅读</span>
+        </div>
         <MarkdownEditor
           ref="markdownEditor"
           v-model="model.content"
@@ -241,54 +268,88 @@ async function submit(action: 'save' | 'publish') {
     </section>
 
     <aside class="editor-side" aria-label="文章设置">
-      <ElFormItem label="内容状态">
-        <ElInput
-          :model-value="isPublished ? '已发布' : isArchived ? '已归档' : '草稿'"
-          disabled
-        />
-      </ElFormItem>
+      <header class="inspector-head">
+        <div>
+          <span>检查器</span>
+          <h2>文章设置</h2>
+        </div>
+        <StatusBadge :status="isPublished ? 'published' : isArchived ? 'archived' : 'draft'" />
+      </header>
 
-      <ElFormItem label="分类">
-        <ElSelect v-model="categorySelection" :disabled="fieldsDisabled" class="side-control">
-          <ElOption label="未分类" value="" />
-          <ElOption
-            v-for="category in props.categories"
-            :key="category.id"
-            :label="category.name"
-            :value="category.id"
-          />
-        </ElSelect>
-      </ElFormItem>
+      <section class="inspector-section" aria-labelledby="taxonomy-heading">
+        <div class="inspector-section__heading">
+          <h3 id="taxonomy-heading">归类</h3>
+          <span>帮助访客找到内容</span>
+        </div>
+        <ElFormItem label="分类">
+          <ElSelect v-model="categorySelection" :disabled="fieldsDisabled" class="side-control">
+            <ElOption label="未分类" value="" />
+            <ElOption
+              v-for="category in props.categories"
+              :key="category.id"
+              :label="category.name"
+              :value="category.id"
+            />
+          </ElSelect>
+        </ElFormItem>
 
-      <ElFormItem label="标签">
-        <ElCheckboxGroup
-          v-if="props.tags.length"
-          v-model="model.tagIds"
-          :disabled="fieldsDisabled"
-          class="tag-options"
-        >
-          <ElCheckbox
-            v-for="tag in props.tags"
-            :key="tag.id"
-            :value="tag.id"
+        <ElFormItem label="标签">
+          <ElSelect
+            v-if="props.tags.length"
+            v-model="model.tagIds"
+            :disabled="fieldsDisabled"
+            class="side-control"
+            collapse-tags
+            collapse-tags-tooltip
+            multiple
+            placeholder="选择标签"
           >
-            {{ tag.name }}
-          </ElCheckbox>
-        </ElCheckboxGroup>
-        <span v-else class="field-hint">尚未创建标签。</span>
-      </ElFormItem>
+            <ElOption
+              v-for="tag in props.tags"
+              :key="tag.id"
+              :label="tag.name"
+              :value="tag.id"
+            />
+          </ElSelect>
+          <span v-else class="field-hint">尚未创建标签。</span>
+        </ElFormItem>
+      </section>
 
-      <ElFormItem label="封面媒体">
-        <ElSelect v-model="coverSelection" :disabled="fieldsDisabled" class="side-control">
-          <ElOption label="不使用封面" value="" />
-          <ElOption
-            v-for="item in props.media"
-            :key="item.id"
-            :label="item.alt_text || item.object_path"
-            :value="item.id"
-          />
-        </ElSelect>
-      </ElFormItem>
+      <section class="inspector-section" aria-labelledby="cover-heading">
+        <div class="inspector-section__heading">
+          <h3 id="cover-heading">封面</h3>
+          <span>用于文章头部与分享场景</span>
+        </div>
+        <div v-if="coverMedia" class="cover-preview">
+          <img :alt="coverMedia.alt_text" :src="getPublicImageUrl(coverMedia)">
+          <span>{{ coverMedia.alt_text || coverMedia.object_path }}</span>
+        </div>
+        <ElFormItem label="封面媒体">
+          <ElSelect v-model="coverSelection" :disabled="fieldsDisabled" class="side-control">
+            <ElOption label="不使用封面" value="" />
+            <ElOption
+              v-for="item in props.media"
+              :key="item.id"
+              :label="item.alt_text || item.object_path"
+              :value="item.id"
+            />
+          </ElSelect>
+        </ElFormItem>
+      </section>
+
+      <section class="inspector-section publish-check" aria-labelledby="publish-check-heading">
+        <div class="inspector-section__heading">
+          <h3 id="publish-check-heading">发布检查</h3>
+          <span>{{ publishChecks.filter(item => item.complete).length }} / {{ publishChecks.length }} 已完成</span>
+        </div>
+        <ul>
+          <li v-for="item in publishChecks" :key="item.label" :class="{ complete: item.complete }">
+            <Check v-if="item.complete" :size="14" aria-hidden="true" />
+            <Circle v-else :size="14" aria-hidden="true" />
+            {{ item.label }}
+          </li>
+        </ul>
+      </section>
 
       <div v-if="isPublished" class="editor-actions">
         <ElButton
@@ -302,7 +363,7 @@ async function submit(action: 'save' | 'publish') {
         </ElButton>
       </div>
       <p v-else-if="isArchived" class="archived-note">
-        归档文章不能发布或恢复。
+        归档文章只保留查阅，不能发布或恢复。
       </p>
       <div v-else class="editor-actions">
         <ElButton
@@ -335,15 +396,47 @@ async function submit(action: 'save' | 'publish') {
 <style scoped>
 .editor-form {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 17rem;
-  gap: 2rem;
+  grid-template-columns: minmax(0, 1fr) 19.5rem;
+  gap: 1.25rem;
   align-items: start;
 }
 
 .editor-main {
   display: grid;
-  gap: 0.4rem;
+  gap: 1rem;
   min-width: 0;
+}
+
+.document-fields,
+.content-field {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border: 1px solid var(--outline-ghost);
+  border-radius: var(--radius-large);
+  background: var(--surface-elevated);
+}
+
+.document-fields :deep(.el-form-item) {
+  margin-bottom: 0.3rem;
+}
+
+.section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.25rem;
+}
+
+.section-heading span {
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.section-heading small {
+  color: var(--on-surface-faint);
+  font-size: 0.72rem;
 }
 
 .title-input :deep(.el-input__inner) {
@@ -363,11 +456,6 @@ async function submit(action: 'save' | 'publish') {
   color: var(--on-surface-muted);
   font-size: 0.78rem;
   line-height: 1.5;
-}
-
-.content-field {
-  display: grid;
-  gap: 0.65rem;
 }
 
 .content-field__heading {
@@ -392,6 +480,25 @@ async function submit(action: 'save' | 'publish') {
   margin-top: 0.15rem;
 }
 
+.content-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 1rem;
+  min-height: 2.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-small);
+  background: var(--surface-container);
+  color: var(--on-surface-muted);
+  font-size: 0.72rem;
+}
+
+.content-metrics span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
 .content-error {
   margin: 0;
   color: var(--danger);
@@ -400,17 +507,105 @@ async function submit(action: 'save' | 'publish') {
 
 .editor-side {
   position: sticky;
-  top: 5rem;
+  top: 4.8rem;
   display: grid;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 0;
+  overflow: hidden;
   border: 1px solid var(--outline-ghost);
-  border-radius: 0.65rem;
-  background: var(--surface-low);
+  border-radius: var(--radius-large);
+  background: var(--surface-elevated);
 }
 
 .editor-side :deep(.el-form-item) {
   margin-bottom: 0;
+}
+
+.inspector-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--surface-container);
+}
+
+.inspector-head > div {
+  display: grid;
+  gap: 0.05rem;
+}
+
+.inspector-head span,
+.inspector-section__heading span {
+  color: var(--on-surface-faint);
+  font-size: 0.68rem;
+}
+
+.inspector-head h2,
+.inspector-section__heading h3 {
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.inspector-head h2 {
+  font-size: 0.95rem;
+}
+
+.inspector-section {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  border-top: 1px solid var(--outline-ghost);
+}
+
+.inspector-section__heading {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.inspector-section__heading h3 {
+  font-size: 0.8rem;
+}
+
+.cover-preview {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.cover-preview img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-small);
+  background: var(--surface-low);
+  object-fit: cover;
+}
+
+.cover-preview span {
+  overflow: hidden;
+  color: var(--on-surface-muted);
+  font-size: 0.7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.publish-check ul {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.publish-check li {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--on-surface-faint);
+  font-size: 0.74rem;
+}
+
+.publish-check li.complete {
+  color: var(--success);
 }
 
 .side-control,
@@ -422,22 +617,13 @@ async function submit(action: 'save' | 'publish') {
 .editor-actions {
   display: grid;
   gap: 0.6rem;
+  padding: 1rem;
+  border-top: 1px solid var(--outline-ghost);
+  background: var(--surface-container);
 }
 
 .editor-actions :deep(.el-button + .el-button) {
   margin-left: 0;
-}
-
-.tag-options {
-  display: grid;
-  gap: 0.35rem;
-  width: 100%;
-}
-
-.tag-options :deep(.el-checkbox) {
-  height: auto;
-  margin-right: 0;
-  white-space: normal;
 }
 
 @media (max-width: 900px) {
@@ -448,6 +634,10 @@ async function submit(action: 'save' | 'publish') {
   .editor-side {
     position: static;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .inspector-head {
+    grid-column: 1 / -1;
   }
 
   .editor-actions,
@@ -468,6 +658,10 @@ async function submit(action: 'save' | 'publish') {
 
   .editor-side {
     grid-template-columns: 1fr;
+  }
+
+  .inspector-head {
+    grid-column: auto;
   }
 
   .editor-actions,

@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft } from '@lucide/vue'
+import { ArrowLeft, ArrowUpRight } from '@lucide/vue'
 import { computed, nextTick, onBeforeUnmount, onMounted, shallowRef, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from 'vue-router'
 import type { PostDraftInput } from '@chen-blog/shared-types'
 import AdminShell from '@/components/AdminShell.vue'
+import AdminPage from '@/components/common/AdminPage.vue'
+import AsyncState from '@/components/common/AsyncState.vue'
+import PageHeader from '@/components/common/PageHeader.vue'
+import StatusBadge from '@/components/common/StatusBadge.vue'
 import PostEditorForm from '@/components/PostEditorForm.vue'
 import { useAuth } from '@/composables/useAuth'
 import {
@@ -25,6 +29,15 @@ const { isOwner } = useAuth()
 const postId = computed(() => (
   typeof route.params.postId === 'string' ? route.params.postId : undefined
 ))
+const returnTo = computed(() => {
+  const value = typeof route.query.returnTo === 'string' ? route.query.returnTo : '/posts'
+  return value.startsWith('/posts') && !value.startsWith('//') ? value : '/posts'
+})
+const publicPostUrl = computed(() => {
+  if (post.value?.status !== 'published') return ''
+  const base = (import.meta.env.VITE_BLOG_URL || 'http://localhost:3000').replace(/\/$/, '')
+  return `${base}/posts/${encodeURIComponent(post.value.slug)}`
+})
 
 const post = shallowRef<AdminPost | null>(null)
 const categories = shallowRef<TaxonomyItem[]>([])
@@ -80,7 +93,11 @@ async function syncSavedPost(id: string) {
   if (!postId.value) {
     bypassNavigationPrompt.value = true
     try {
-      await router.replace({ name: 'post-editor', params: { postId: id } })
+      await router.replace({
+        name: 'post-editor',
+        params: { postId: id },
+        query: route.query,
+      })
     } finally {
       bypassNavigationPrompt.value = false
     }
@@ -172,65 +189,89 @@ function confirmEditorNavigation() {
   return window.confirm('尚有未保存的修改，确定离开编辑器吗？')
 }
 
+function formatUpdatedAt(value: string) {
+  return new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value))
+}
+
 onBeforeRouteLeave(confirmEditorNavigation)
 onBeforeRouteUpdate(confirmEditorNavigation)
 </script>
 
 <template>
   <AdminShell>
-    <div class="page-head">
-      <div>
-        <RouterLink class="back" :to="{ name: 'dashboard' }">
-          <ArrowLeft :size="16" aria-hidden="true" />
-          文章
-        </RouterLink>
-        <p class="eyebrow">{{ postId ? 'editing' : 'new post' }}</p>
-        <h1 class="page-title">{{ postId ? '编辑文章' : '新建文章' }}</h1>
-      </div>
-    </div>
+    <AdminPage size="wide">
+      <RouterLink class="back" :to="returnTo">
+        <ArrowLeft :size="16" aria-hidden="true" />
+        返回文章列表
+      </RouterLink>
 
-    <ElAlert
-      v-if="loadError"
-      :closable="false"
-      :title="loadError"
-      type="error"
-      show-icon
-    />
-    <div v-else-if="loading" class="empty-state" aria-live="polite">
-      正在载入编辑器…
-    </div>
-    <PostEditorForm
-      v-else
-      :categories="categories"
-      :media="media"
-      :post="post"
-      :publishing="publishing"
-      :saving="saving"
-      :tags="tags"
-      :transitioning="transitioning"
-      @dirty-change="dirty = $event"
-      @publish="saveAndPublish"
-      @request-draft="requestDraft"
-      @save="save"
-    />
+      <PageHeader
+        :description="post ? post.title : '从标题和正文开始，保存为草稿后再通过安全发布接口公开。'"
+        :eyebrow="postId ? 'EDITOR' : 'NEW DRAFT'"
+        :title="postId ? '编辑文章' : '新建文章'"
+      >
+        <div class="editor-context" aria-live="polite">
+          <StatusBadge
+            :status="post?.status === 'published' ? 'published' : post?.status === 'archived' ? 'archived' : 'draft'"
+          />
+          <span v-if="dirty" class="dirty-indicator">有未保存修改</span>
+          <span v-else-if="post">上次保存于 {{ formatUpdatedAt(post.updated_at) }}</span>
+          <span v-else>尚未保存</span>
+        </div>
+        <template #actions>
+          <a
+            v-if="publicPostUrl"
+            class="button"
+            :href="publicPostUrl"
+            rel="noreferrer"
+            target="_blank"
+          >
+            公开页面
+            <ArrowUpRight :size="16" aria-hidden="true" />
+          </a>
+        </template>
+      </PageHeader>
+
+      <section class="editor-workspace">
+        <AsyncState
+          v-if="loadError || loading"
+          :description="loadError || '正在准备文章、分类、标签和媒体数据。'"
+          :state="loadError ? 'error' : 'loading'"
+          :title="loadError ? '编辑器无法载入' : undefined"
+          @retry="loadEditor(postId)"
+        />
+        <PostEditorForm
+          v-else
+          :categories="categories"
+          :media="media"
+          :post="post"
+          :publishing="publishing"
+          :saving="saving"
+          :tags="tags"
+          :transitioning="transitioning"
+          @dirty-change="dirty = $event"
+          @publish="saveAndPublish"
+          @request-draft="requestDraft"
+          @save="save"
+        />
+      </section>
+    </AdminPage>
   </AdminShell>
 </template>
 
 <style scoped>
-.page-head {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
 .back {
   display: inline-flex;
   min-height: 2.5rem;
   align-items: center;
   gap: 0.35rem;
-  margin-bottom: 0.55rem;
+  margin-bottom: 0.65rem;
   color: var(--on-surface-muted);
   font-size: 0.85rem;
 }
@@ -239,7 +280,33 @@ onBeforeRouteUpdate(confirmEditorNavigation)
   color: var(--accent);
 }
 
-.page-head .eyebrow {
-  margin: 0.2rem 0 0;
+.editor-context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.7rem;
+  color: var(--on-surface-faint);
+  font-size: 0.74rem;
+}
+
+.dirty-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--warning);
+  font-weight: 700;
+}
+
+.dirty-indicator::before {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: currentColor;
+  content: '';
+}
+
+.editor-workspace {
+  padding-top: 1.25rem;
 }
 </style>
