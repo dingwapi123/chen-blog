@@ -7,6 +7,14 @@ import type {
   ComarkPlugin,
 } from 'comark'
 
+export {
+  applyArticleHeadingRules,
+  createArticleHeadingPlugin,
+  extractArticleHeadings,
+  slugifyArticleHeading,
+} from './article-headings'
+export type { ArticleHeading, ArticleHeadingDepth } from './article-headings'
+
 const markdownTags = [
   'a',
   'blockquote',
