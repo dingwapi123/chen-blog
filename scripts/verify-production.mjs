@@ -180,7 +180,10 @@ assert.equal(new Set(richArticleHeadingIds).size, richArticleHeadingIds.length, 
 
 const coverTag = richArticleImages.find(tag => tag.includes('class="article-cover__image"'))
 const optimizedCoverPath = coverTag?.match(/\bsrc="([^"]+)"/)?.[1]?.replaceAll('&amp;', '&')
-assert.ok(optimizedCoverPath?.startsWith('/_ipx/'), `${richArticle.pathname} cover must use the Nuxt image endpoint`)
+assert.ok(
+  optimizedCoverPath?.startsWith('/_ipx/') || optimizedCoverPath?.startsWith('/.netlify/images?'),
+  `${richArticle.pathname} cover must use the Nuxt Image optimization endpoint`,
+)
 const optimizedCover = await request(blogUrl, optimizedCoverPath)
 assertStatus(optimizedCover, 200, `${richArticle.pathname} optimized cover`)
 assertIncludes(optimizedCover.response.headers.get('content-type'), 'image/', `${richArticle.pathname} optimized cover content type`)
