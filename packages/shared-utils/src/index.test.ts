@@ -1,5 +1,46 @@
 import { describe, expect, it } from 'vitest'
-import { calculateReadingMinutes, formatDate, getYear } from './index'
+import {
+  calculateReadingMinutes,
+  formatDate,
+  getNextTheme,
+  getThemeToggleLabel,
+  getYear,
+  isTheme,
+  resolveTheme,
+} from './index'
+
+describe('theme rules', () => {
+  it.each([
+    ['light', true],
+    ['dark', true],
+    ['system', false],
+    ['Dark', false],
+    ['', false],
+    [null, false],
+  ])('recognizes persisted theme value %j', (value, expected) => {
+    expect(isTheme(value)).toBe(expected)
+  })
+
+  it('keeps a valid manual preference ahead of the system preference', () => {
+    expect(resolveTheme('light', true)).toBe('light')
+    expect(resolveTheme('dark', false)).toBe('dark')
+  })
+
+  it('falls back to the system preference when no manual theme is valid', () => {
+    expect(resolveTheme(null, true)).toBe('dark')
+    expect(resolveTheme('system', false)).toBe('light')
+  })
+
+  it('toggles both theme directions', () => {
+    expect(getNextTheme('light')).toBe('dark')
+    expect(getNextTheme('dark')).toBe('light')
+  })
+
+  it('describes the action that the theme toggle will perform', () => {
+    expect(getThemeToggleLabel('light')).toBe('切换到深色模式')
+    expect(getThemeToggleLabel('dark')).toBe('切换到浅色模式')
+  })
+})
 
 describe('calculateReadingMinutes', () => {
   it('counts compact Chinese prose by characters rather than whitespace chunks', () => {

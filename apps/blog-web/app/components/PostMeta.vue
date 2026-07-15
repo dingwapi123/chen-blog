@@ -16,6 +16,6 @@ defineProps<{ post: Pick<PostPreview, 'publishedAt' | 'readingMinutes' | 'catego
 </template>
 
 <style scoped>
-.post-meta { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin: 0; color: var(--text-muted); font-size: 0.82rem; }
+.post-meta { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin: 0; color: var(--on-surface-muted); font-size: 0.82rem; }
 .post-meta a:hover { color: var(--accent); }
 </style>

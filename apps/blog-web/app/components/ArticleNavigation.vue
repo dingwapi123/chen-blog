@@ -33,7 +33,7 @@ defineProps<{
 .article-navigation__link { display: flex; min-width: 0; align-items: center; gap: var(--space-sm); padding: var(--space-md); border-radius: 0.5rem; background: var(--surface-low); transition: color 160ms ease, background-color 160ms ease; }
 .article-navigation__link:hover { color: var(--accent); background: var(--accent-soft); }
 .article-navigation__link span { display: grid; min-width: 0; }
-.article-navigation__link small { color: var(--text-faint); font-size: 0.75rem; }
+.article-navigation__link small { color: var(--on-surface-faint); font-size: 0.75rem; }
 .article-navigation__link strong { overflow: hidden; font-size: 0.92rem; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .article-navigation__link--next { justify-content: flex-end; text-align: right; }
 @media (max-width: 640px) { .article-navigation { grid-template-columns: 1fr; }.article-navigation > span { display: none; } }

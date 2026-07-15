@@ -51,19 +51,21 @@ const {
 .not-found-page > p:last-of-type {
   max-width: 34rem;
   margin: var(--space-lg) 0;
-  color: var(--text-muted);
+  color: var(--on-surface-muted);
 }
 
 .not-found-page a {
   display: inline-flex;
+  min-height: 2.5rem;
   align-items: center;
+  justify-content: center;
   gap: var(--space-sm);
   padding: 0.72rem 1rem;
-  border-radius: 0.55rem;
-  color: var(--bg-elevated);
-  background: var(--accent);
+  border-radius: 0.375rem;
+  color: var(--surface-elevated);
+  background: linear-gradient(135deg, var(--accent), var(--accent-container));
   font-weight: 700;
 }
 
-.not-found-page a:hover { background: var(--accent-hover); }
+.not-found-page a:hover { background: linear-gradient(135deg, var(--accent-container), var(--accent)); }
 </style>

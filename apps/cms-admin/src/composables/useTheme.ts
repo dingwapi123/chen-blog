@@ -1,6 +1,11 @@
 import { computed, readonly, shallowRef } from 'vue'
-
-type Theme = 'light' | 'dark'
+import {
+  getNextTheme,
+  getThemeToggleLabel,
+  isTheme,
+  resolveTheme,
+} from '@chen-blog/shared-utils'
+import type { Theme } from '@chen-blog/shared-utils'
 
 const theme = shallowRef<Theme>('light')
 const initialized = shallowRef(false)
@@ -17,22 +22,20 @@ function handleSystemTheme(event: MediaQueryListEvent) {
 }
 
 export function useTheme() {
-  const label = computed(() => (
-    theme.value === 'dark' ? '切换到浅色模式' : '切换到深色模式'
-  ))
+  const label = computed(() => getThemeToggleLabel(theme.value))
 
   function initialize() {
     if (initialized.value) return
     const saved = localStorage.getItem('chen-blog-cms-theme')
     colorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    hasManualTheme.value = saved === 'dark' || saved === 'light'
-    applyTheme(hasManualTheme.value ? saved as Theme : colorSchemeQuery.matches ? 'dark' : 'light')
+    hasManualTheme.value = isTheme(saved)
+    applyTheme(resolveTheme(saved, colorSchemeQuery.matches))
     colorSchemeQuery.addEventListener('change', handleSystemTheme)
     initialized.value = true
   }
 
   function toggle() {
-    const nextTheme = theme.value === 'dark' ? 'light' : 'dark'
+    const nextTheme = getNextTheme(theme.value)
     hasManualTheme.value = true
     applyTheme(nextTheme)
     localStorage.setItem('chen-blog-cms-theme', nextTheme)

@@ -11,5 +11,5 @@ usePageSeo({ title: '文章', description: '陈信至的技术文章与学习笔
 </template>
 
 <style scoped>
-.posts-page { padding-top: var(--space-3xl); }.page-heading { margin-bottom: var(--space-xl); }.page-heading .eyebrow, .page-heading p { margin: 0 0 var(--space-sm); }.page-heading > p:last-child { color: var(--text-muted); }
+.posts-page { padding-top: var(--space-3xl); }.page-heading { margin-bottom: var(--space-xl); }.page-heading .eyebrow, .page-heading p { margin: 0 0 var(--space-sm); }.page-heading > p:last-child { color: var(--on-surface-muted); }
 </style>

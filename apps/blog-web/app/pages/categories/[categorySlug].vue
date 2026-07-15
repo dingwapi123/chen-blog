@@ -34,6 +34,6 @@ usePageSeo({
 <style scoped>
 .taxonomy-page { padding-top: var(--space-3xl); }
 .taxonomy-page header { margin-bottom: var(--space-xl); }
-.taxonomy-page p { color: var(--text-muted); }
+.taxonomy-page p { color: var(--on-surface-muted); }
 .taxonomy-page .eyebrow { margin: 0 0 var(--space-sm); color: var(--accent); }
 </style>

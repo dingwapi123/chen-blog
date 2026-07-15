@@ -1,14 +1,18 @@
 import { computed } from 'vue'
-
-type Theme = 'light' | 'dark'
+import {
+  getNextTheme,
+  getThemeToggleLabel,
+  resolveTheme,
+} from '@chen-blog/shared-utils'
+import type { Theme } from '@chen-blog/shared-utils'
 
 export function useTheme() {
   const colorMode = useColorMode()
-  const theme = computed<Theme>(() => colorMode.value === 'dark' ? 'dark' : 'light')
-  const label = computed(() => (theme.value === 'dark' ? '切换到浅色模式' : '切换到深色模式'))
+  const theme = computed<Theme>(() => resolveTheme(colorMode.value, false))
+  const label = computed(() => getThemeToggleLabel(theme.value))
 
   function toggle() {
-    const nextTheme = theme.value === 'dark' ? 'light' : 'dark'
+    const nextTheme = getNextTheme(theme.value)
     colorMode.preference = nextTheme
     if (import.meta.client) {
       document.cookie = `chen-blog-theme=${nextTheme}; Path=/; Max-Age=31536000; SameSite=Lax`

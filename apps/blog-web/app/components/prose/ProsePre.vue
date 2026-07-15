@@ -44,7 +44,7 @@ const label = computed(() => props.filename?.trim() || props.language?.trim() ||
   padding: 2.55rem 1.15rem 1.15rem;
   border: 0;
   border-radius: 0.375rem;
-  background: var(--code-bg);
+  background: var(--code-surface);
   color: var(--code-on-surface);
   font-family: var(--font-code);
   font-size: 0.8em;

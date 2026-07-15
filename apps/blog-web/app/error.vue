@@ -38,7 +38,7 @@ useSeoMeta({
 .error-page { display: grid; flex: 1; align-content: center; justify-items: start; padding-block: var(--space-3xl); }
 .error-page .eyebrow { margin: 0 0 var(--space-sm); }
 .error-page h1 { max-width: 12ch; margin: 0; font-family: var(--font-reading); font-size: clamp(2.7rem, 7vw, 5.75rem); font-weight: 600; letter-spacing: -0.05em; line-height: 1; }
-.error-page > p:last-of-type { max-width: 34rem; margin: var(--space-lg) 0; color: var(--text-muted); }
-.error-page button { display: inline-flex; align-items: center; gap: var(--space-sm); padding: 0.72rem 1rem; border: 0; border-radius: 0.55rem; color: var(--bg-elevated); background: var(--accent); font-weight: 700; }
-.error-page button:hover { background: var(--accent-hover); }
+.error-page > p:last-of-type { max-width: 34rem; margin: var(--space-lg) 0; color: var(--on-surface-muted); }
+.error-page button { display: inline-flex; min-height: 2.5rem; align-items: center; justify-content: center; gap: var(--space-sm); padding: 0.72rem 1rem; border: 0; border-radius: 0.375rem; color: var(--surface-elevated); background: linear-gradient(135deg, var(--accent), var(--accent-container)); font-weight: 700; }
+.error-page button:hover { background: linear-gradient(135deg, var(--accent-container), var(--accent)); }
 </style>

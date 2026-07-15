@@ -2,6 +2,25 @@ export function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0
 }
 
+export type Theme = 'light' | 'dark'
+
+export function isTheme(value: unknown): value is Theme {
+  return value === 'light' || value === 'dark'
+}
+
+export function resolveTheme(value: unknown, prefersDark: boolean): Theme {
+  if (isTheme(value)) return value
+  return prefersDark ? 'dark' : 'light'
+}
+
+export function getNextTheme(theme: Theme): Theme {
+  return theme === 'dark' ? 'light' : 'dark'
+}
+
+export function getThemeToggleLabel(theme: Theme): string {
+  return theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'
+}
+
 export function calculateReadingMinutes(content: string): number {
   const chineseCharacters = (content.match(/[\u3400-\u9fff]/gu) ?? []).length
   const words = content
