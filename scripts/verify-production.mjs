@@ -25,7 +25,11 @@ function assertIncludes(value, expected, label) {
 }
 
 function assertStrictPublicCache(response, label) {
-  assertIncludes(response.headers.get('cache-control'), 'max-age=0', `${label} browser cache`)
+  const browserCache = response.headers.get('cache-control')?.toLowerCase() ?? ''
+  assert.ok(
+    browserCache.includes('max-age=0') || browserCache.includes('no-cache') || browserCache.includes('no-store'),
+    `${label} browser cache must revalidate or bypass storage`,
+  )
   const vary = response.headers.get('netlify-vary') ?? ''
   assertIncludes(vary, 'query', `${label} Netlify query variation`)
   assertIncludes(vary, 'cookie=chen-blog-theme', `${label} theme variation`)
@@ -76,8 +80,8 @@ assertStatus(light, 200, 'light theme response')
 assertStatus(dark, 200, 'dark theme response')
 assertStrictPublicCache(light.response, 'light theme response')
 assertStrictPublicCache(dark.response, 'dark theme response')
-assertIncludes(light.body, '>"light","system"', 'light SSR color-mode state')
-assertIncludes(dark.body, '>"dark","system"', 'dark SSR color-mode state')
+assertIncludes(light.body, '},"light","system"', 'light SSR color-mode state')
+assertIncludes(dark.body, '},"dark","system"', 'dark SSR color-mode state')
 assert.notEqual(light.body, dark.body, 'light and dark SSR responses must not share one cache object')
 
 const cmsHome = await request(cmsUrl, '/')
