@@ -14,8 +14,8 @@ describe('TaxonomyView', () => {
   beforeEach(() => {
     apiMocks.listTaxonomy.mockImplementation(async (kind: 'categories' | 'tags') => (
       kind === 'categories'
-        ? [{ id: 'category-1', name: '工程实践', slug: 'engineering', description: '分类说明' }]
-        : [{ id: 'tag-1', name: 'Vue', slug: 'vue' }]
+        ? [{ id: 'category-1', name: '工程实践', slug: 'engineering', description: '分类说明', usage_count: 2 }]
+        : [{ id: 'tag-1', name: 'Vue', slug: 'vue', usage_count: 1 }]
     ))
   })
 
@@ -25,6 +25,8 @@ describe('TaxonomyView', () => {
       global: {
         stubs: {
           AdminShell: { template: '<main><slot /></main>' },
+          AdminPage: { template: '<div><slot /></div>' },
+          AsyncState: { template: '<section><slot /></section>' },
         },
       },
     })

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Search } from '@lucide/vue'
 import { computed, shallowRef } from 'vue'
 import { getPublicImageUrl, type AdminMedia } from '@/features/content/api'
 
@@ -12,12 +13,21 @@ const emit = defineEmits<{
 }>()
 
 const selectedId = shallowRef<string | null>(null)
+const search = shallowRef('')
 
 const mediaOptions = computed(() => props.media.map((item) => ({
   item,
   label: item.alt_text.trim() || '未填写替代文本',
   url: getPublicImageUrl(item),
 })))
+const filteredOptions = computed(() => {
+  const keyword = search.value.trim().toLocaleLowerCase('zh-CN')
+  if (!keyword) return mediaOptions.value
+  return mediaOptions.value.filter(option => (
+    option.label.toLocaleLowerCase('zh-CN').includes(keyword)
+    || option.item.object_path.toLocaleLowerCase('zh-CN').includes(keyword)
+  ))
+})
 
 const selectedMedia = computed(() => (
   props.media.find((item) => item.id === selectedId.value) ?? null
@@ -35,6 +45,7 @@ function confirmSelection() {
 
 function resetSelection() {
   selectedId.value = null
+  search.value = ''
 }
 </script>
 
@@ -53,9 +64,17 @@ function resetSelection() {
 
     <ElEmpty v-if="mediaOptions.length === 0" description="媒体库中还没有图片" />
 
+    <template v-else>
+      <div class="media-picker__toolbar">
+        <ElInput v-model="search" clearable placeholder="搜索替代文本或文件名">
+          <template #prefix><Search :size="15" aria-hidden="true" /></template>
+        </ElInput>
+        <span>{{ filteredOptions.length }} 个结果</span>
+      </div>
+      <ElEmpty v-if="filteredOptions.length === 0" description="没有符合条件的图片" />
     <div v-else class="media-picker__grid" role="group" aria-label="可插入的媒体图片">
       <button
-        v-for="option in mediaOptions"
+        v-for="option in filteredOptions"
         :key="option.item.id"
         class="media-option"
         :class="{ 'media-option--selected': selectedId === option.item.id }"
@@ -77,6 +96,7 @@ function resetSelection() {
         </span>
       </button>
     </div>
+    </template>
 
     <template #footer>
       <ElButton @click="open = false">取消</ElButton>
@@ -96,6 +116,24 @@ function resetSelection() {
   margin: 0 0 1rem;
   color: var(--on-surface-muted);
   font-size: 0.86rem;
+}
+
+.media-picker__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.media-picker__toolbar :deep(.el-input) {
+  max-width: 22rem;
+}
+
+.media-picker__toolbar > span {
+  color: var(--on-surface-faint);
+  font-size: 0.72rem;
+  white-space: nowrap;
 }
 
 .media-picker__grid {

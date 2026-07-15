@@ -14,10 +14,12 @@ import {
   deleteTaxonomy,
   getDashboardOverview,
   listPosts,
+  listTaxonomy,
   normalizePostListQuery,
   parsePostListRouteQuery,
   savePost,
   serializePostListRouteQuery,
+  updateMediaAltText,
 } from './api'
 
 const draft: PostDraftInput = {
@@ -248,5 +250,53 @@ describe('deleteTaxonomy', () => {
     mocks.getSupabase.mockReturnValue({ from: vi.fn().mockReturnValue({ delete: remove }) })
 
     await expect(deleteTaxonomy('tags', 'missing-tag')).rejects.toThrow('可能已被删除')
+  })
+})
+
+describe('taxonomy and media metadata', () => {
+  beforeEach(() => {
+    mocks.getSupabase.mockReset()
+  })
+
+  it('normalizes relation counts for categories and tags', async () => {
+    const from = vi.fn((table: string) => ({
+      select: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({
+          data: table === 'categories'
+            ? [{ id: 'category-1', name: '工程', slug: 'engineering', description: '', posts: [{ count: 3 }] }]
+            : [{ id: 'tag-1', name: 'Vue', slug: 'vue', post_tags: [{ count: 5 }] }],
+          error: null,
+        }),
+      }),
+    }))
+    mocks.getSupabase.mockReturnValue({ from })
+
+    await expect(listTaxonomy('categories')).resolves.toEqual([
+      { id: 'category-1', name: '工程', slug: 'engineering', description: '', usage_count: 3 },
+    ])
+    await expect(listTaxonomy('tags')).resolves.toEqual([
+      { id: 'tag-1', name: 'Vue', slug: 'vue', usage_count: 5 },
+    ])
+  })
+
+  it('trims and persists media alternative text with a matched-row check', async () => {
+    const updated = {
+      id: 'media-1',
+      bucket_id: 'post-images',
+      object_path: 'media-1.webp',
+      alt_text: '新的图片说明',
+      mime_type: 'image/webp',
+      size_bytes: 1024,
+      created_at: '2026-07-16T00:00:00.000Z',
+    }
+    const maybeSingle = vi.fn().mockResolvedValue({ data: updated, error: null })
+    const select = vi.fn().mockReturnValue({ maybeSingle })
+    const eq = vi.fn().mockReturnValue({ select })
+    const update = vi.fn().mockReturnValue({ eq })
+    mocks.getSupabase.mockReturnValue({ from: vi.fn().mockReturnValue({ update }) })
+
+    await expect(updateMediaAltText('media-1', '  新的图片说明  ')).resolves.toEqual(updated)
+    expect(update).toHaveBeenCalledWith({ alt_text: '新的图片说明' })
+    await expect(updateMediaAltText('media-1', '   ')).rejects.toThrow('替代文本不能为空')
   })
 })
