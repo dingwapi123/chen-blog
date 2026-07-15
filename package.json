@@ -12,7 +12,7 @@
     "build": "pnpm -r --if-present build",
     "dev:blog": "pnpm --filter @chen-blog/blog-web dev",
     "dev:cms": "pnpm --filter @chen-blog/cms-admin dev",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
     "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r --if-present typecheck",
     "verify:production": "node scripts/verify-production.mjs",
@@ -23,7 +23,12 @@
     "db:types": "node scripts/generate-database-types.mjs"
   },
   "devDependencies": {
-    "eslint": "^10.0.0",
-    "supabase": "2.109.1"
+    "@eslint/js": "10.0.1",
+    "eslint": "10.0.0",
+    "eslint-plugin-vue": "10.9.2",
+    "globals": "17.7.0",
+    "supabase": "2.109.1",
+    "typescript-eslint": "8.64.0",
+    "vue-eslint-parser": "10.4.1"
   }
 }

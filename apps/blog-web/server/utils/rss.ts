@@ -22,6 +22,8 @@ const xmlEntities: Record<string, string> = {
 
 export function escapeXml(value: string): string {
   return value
+    // XML 1.0 explicitly forbids these control-code ranges in text nodes.
+    // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, '')
     .replace(/[&<>"']/g, character => xmlEntities[character]!)
 }
