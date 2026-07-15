@@ -14,6 +14,7 @@ function netlifyContentCache() {
     headers: {
       'Cache-Control': 'public, max-age=0, must-revalidate',
       'Netlify-CDN-Cache-Control': 'public, max-age=600, must-revalidate',
+      'Netlify-Vary': 'query,cookie=chen-blog-theme',
     },
   }
 }
