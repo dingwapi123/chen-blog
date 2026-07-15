@@ -1,6 +1,6 @@
 # Chen Blog
 
-个人技术博客与独立 CMS 的 pnpm monorepo。架构与安全约束见 [V1.0.10 技术方案](docs/个人技术博客-技术方案-V1.0.10.md)。
+个人技术博客与独立 CMS 的 pnpm monorepo。架构与安全约束见 [V1.0.11 技术方案](docs/个人技术博客-技术方案-V1.0.11.md)。
 
 公开端使用 Nuxt 4、Nuxt UI、Tailwind CSS v4、Comark 与 Nuxt Image；CMS 使用 Vue 3、Element Plus、CodeMirror 和自研内容工作台。工作台借鉴成熟 Vue 3 后台的信息架构，但不导入其权限、请求、主题或图表体系。两端统一使用 `@lucide/vue` 图标并支持系统/手动浅色与暗色主题。CMS V1 只编辑 Markdown/Comark 源码，不提供草稿最终预览，也不引入 Tailwind、ECharts、`vue-echarts` 或 Yjs。
 

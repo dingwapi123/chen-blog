@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = extensions, public;
 
-select plan(60);
+select plan(71);
 
 -- Structural security invariants ------------------------------------------------
 
@@ -48,7 +48,6 @@ select is(
         ('authenticated', 'tags', 'DELETE'),
         ('authenticated', 'post_tags', 'SELECT'),
         ('authenticated', 'post_tags', 'INSERT'),
-        ('authenticated', 'post_tags', 'UPDATE'),
         ('authenticated', 'post_tags', 'DELETE'),
         ('authenticated', 'media', 'SELECT'),
         ('authenticated', 'media', 'INSERT'),
@@ -161,6 +160,28 @@ select is(
   ),
   2,
   'media requires MIME type and byte size metadata'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from pg_constraint
+    where conname in ('posts_category_id_fkey', 'post_tags_tag_id_fkey')
+      and confdeltype = 'r'
+  ),
+  2,
+  'taxonomy foreign keys restrict deletes instead of changing related articles'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_indexes
+    where schemaname = 'public'
+      and tablename = 'posts'
+      and indexname = 'posts_category_id_idx'
+  ),
+  'category references have a full supporting index'
 );
 
 -- Test fixtures are administrative setup and are always rolled back. -------------
@@ -596,6 +617,93 @@ select throws_ok(
   'owner cannot physically delete media metadata'
 );
 
+select throws_ok(
+  $$insert into public.post_tags (post_id, tag_id)
+    values ('99999999-9999-4999-8999-999999999931', '99999999-9999-4999-8999-999999999912')$$,
+  '42501',
+  'new row violates row-level security policy "post tags require an editable post for insert" for table "post_tags"',
+  'owner cannot add a tag relation to a published post'
+);
+
+select is_empty(
+  $$delete from public.post_tags
+    where post_id = '99999999-9999-4999-8999-999999999931'
+      and tag_id = '99999999-9999-4999-8999-999999999911'
+    returning 1$$,
+  'owner cannot remove a tag relation from a published post'
+);
+
+select is_empty(
+  $$update public.categories
+    set name = 'Forbidden published category edit'
+    where id = '99999999-9999-4999-8999-999999999901'
+    returning 1$$,
+  'owner cannot update a category used by a published post'
+);
+
+select is_empty(
+  $$delete from public.categories
+    where id = '99999999-9999-4999-8999-999999999901'
+    returning 1$$,
+  'owner cannot delete a referenced category'
+);
+
+select is_empty(
+  $$update public.tags
+    set name = 'Forbidden published tag edit'
+    where id = '99999999-9999-4999-8999-999999999911'
+    returning 1$$,
+  'owner cannot update a tag used by a published post'
+);
+
+select is_empty(
+  $$delete from public.tags
+    where id = '99999999-9999-4999-8999-999999999911'
+    returning 1$$,
+  'owner cannot delete a referenced tag'
+);
+
+select is_empty(
+  $$update public.media
+    set alt_text = 'Forbidden published cover edit'
+    where id = '99999999-9999-4999-8999-999999999921'
+    returning 1$$,
+  'owner cannot update cover metadata used by a published post'
+);
+
+select ok(
+  (select name = 'Public category' from public.categories where id = '99999999-9999-4999-8999-999999999901')
+  and (select name = 'Public tag' from public.tags where id = '99999999-9999-4999-8999-999999999911')
+  and (select alt_text = 'Public cover' from public.media where id = '99999999-9999-4999-8999-999999999921')
+  and exists (
+    select 1 from public.post_tags
+    where post_id = '99999999-9999-4999-8999-999999999931'
+      and tag_id = '99999999-9999-4999-8999-999999999911'
+  )
+  and not exists (
+    select 1 from public.post_tags
+    where post_id = '99999999-9999-4999-8999-999999999931'
+      and tag_id = '99999999-9999-4999-8999-999999999912'
+  ),
+  'rejected metadata writes leave the published article unchanged'
+);
+
+select lives_ok(
+  $sql$
+    do $block$
+    begin
+      update public.categories set name = 'Updated draft category'
+      where id = '99999999-9999-4999-8999-999999999902';
+      update public.tags set name = 'Updated draft tag'
+      where id = '99999999-9999-4999-8999-999999999912';
+      update public.media set alt_text = 'Updated draft cover'
+      where id = '99999999-9999-4999-8999-999999999922';
+    end
+    $block$
+  $sql$,
+  'owner can update metadata referenced only by drafts'
+);
+
 select lives_ok(
   $sql$
     do $block$
@@ -650,9 +758,9 @@ select lives_ok(
     do $block$
     begin
       insert into public.post_tags (post_id, tag_id)
-      values ('99999999-9999-4999-8999-999999999935', '99999999-9999-4999-8999-999999999911');
+      values ('99999999-9999-4999-8999-999999999932', '99999999-9999-4999-8999-999999999911');
       delete from public.post_tags
-      where post_id = '99999999-9999-4999-8999-999999999935'
+      where post_id = '99999999-9999-4999-8999-999999999932'
         and tag_id = '99999999-9999-4999-8999-999999999911';
     end
     $block$
