@@ -26,7 +26,7 @@ async function publish(id: string) {
 
 async function archive(id: string) {
   try {
-    await ElMessageBox.confirm('文章会被归档并从公开页面隐藏，之后仍可在后台保留记录。', '确认软删除？', {
+    await ElMessageBox.confirm('文章会被归档并从公开数据中隐藏；Netlify 已缓存的页面最多可能继续显示 10 分钟，后台仍会保留记录。', '确认软删除？', {
       confirmButtonText: '归档文章',
       cancelButtonText: '取消',
       type: 'warning',

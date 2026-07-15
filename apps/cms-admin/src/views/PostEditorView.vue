@@ -132,7 +132,7 @@ async function requestDraft() {
 
   try {
     await ElMessageBox.confirm(
-      '文章会立即从公开页面撤下。完成修改后，需要再次点击“保存并发布”。',
+      '文章会立即从公开数据中撤下；Netlify 已缓存的页面最多可能继续显示 10 分钟。完成修改后，需要再次点击“保存并发布”。',
       '转回草稿？',
       {
         confirmButtonText: '转为草稿',

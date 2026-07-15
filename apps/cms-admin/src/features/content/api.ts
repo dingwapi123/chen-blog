@@ -1,33 +1,29 @@
 import { assertAllowedContent, getPostImagesPublicUrlPrefix } from '@chen-blog/content-rules'
+import type { Tables, TablesInsert } from '@chen-blog/database-types'
 import type { PostDraftInput, PostStatus } from '@chen-blog/shared-types'
+import type { QueryData } from '@supabase/supabase-js'
 import { getSupabase, getSupabaseUrl } from '@/lib/supabase'
 
-export type AdminPost = {
-  id: string
-  title: string
-  slug: string
-  summary: string
-  content: string
-  status: PostStatus
-  category_id: string | null
-  cover_media_id: string | null
-  published_at: string | null
-  updated_at: string
-  deleted_at: string | null
-  post_tags: { tag_id: string }[]
+function selectAdminPost() {
+  return getSupabase()
+    .from('posts')
+    .select('id,title,slug,summary,content,status,category_id,cover_media_id,published_at,updated_at,deleted_at,post_tags(tag_id)')
 }
 
-export type AdminPostListItem = Pick<
-  AdminPost,
-  'id' | 'title' | 'slug' | 'summary' | 'status' | 'updated_at' | 'published_at' | 'deleted_at'
->
-
-export type TaxonomyItem = {
-  id: string
-  name: string
-  slug: string
-  description?: string
+function selectAdminPostList() {
+  return getSupabase()
+    .from('posts')
+    .select('id,title,slug,summary,status,updated_at,published_at,deleted_at')
 }
+
+type AdminPostRow = QueryData<ReturnType<typeof selectAdminPost>>[number]
+type AdminPostListRow = QueryData<ReturnType<typeof selectAdminPostList>>[number]
+
+export type AdminPost = Omit<AdminPostRow, 'status'> & { status: PostStatus }
+export type AdminPostListItem = Omit<AdminPostListRow, 'status'> & { status: PostStatus }
+
+export type TaxonomyItem = Pick<Tables<'tags'>, 'id' | 'name' | 'slug'>
+  & Partial<Pick<Tables<'categories'>, 'description'>>
 
 export type TaxonomyDraft = {
   id?: string
@@ -36,15 +32,10 @@ export type TaxonomyDraft = {
   description?: string
 }
 
-export type AdminMedia = {
-  id: string
-  bucket_id: string
-  object_path: string
-  alt_text: string
-  mime_type: string
-  size_bytes: number
-  created_at: string
-}
+export type AdminMedia = Pick<
+  Tables<'media'>,
+  'id' | 'bucket_id' | 'object_path' | 'alt_text' | 'mime_type' | 'size_bytes' | 'created_at'
+>
 
 const mediaExtensionByMimeType: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -53,23 +44,28 @@ const mediaExtensionByMimeType: Record<string, string> = {
   'image/gif': 'gif',
 }
 
+function isPostStatus(status: string): status is PostStatus {
+  return status === 'draft' || status === 'published' || status === 'archived'
+}
+
+function normalizePostStatus<Row extends { status: string }>(row: Row): Omit<Row, 'status'> & { status: PostStatus } {
+  if (!isPostStatus(row.status)) throw new Error(`未知的文章状态：${row.status}`)
+  return { ...row, status: row.status }
+}
+
 export async function listPosts() {
-  const { data, error } = await getSupabase()
-    .from('posts')
-    .select('id,title,slug,summary,status,updated_at,published_at,deleted_at')
+  const { data, error } = await selectAdminPostList()
     .order('updated_at', { ascending: false })
   if (error) throw error
-  return data as AdminPostListItem[]
+  return data.map(normalizePostStatus)
 }
 
 export async function getPost(id: string) {
-  const { data, error } = await getSupabase()
-    .from('posts')
-    .select('id,title,slug,summary,content,status,category_id,cover_media_id,published_at,updated_at,deleted_at,post_tags(tag_id)')
+  const { data, error } = await selectAdminPost()
     .eq('id', id)
     .maybeSingle()
   if (error) throw error
-  return data as AdminPost | null
+  return data ? normalizePostStatus(data) : null
 }
 
 export async function savePost(id: string | undefined, input: PostDraftInput) {
@@ -85,7 +81,7 @@ export async function savePost(id: string | undefined, input: PostDraftInput) {
     category_id: input.categoryId,
     cover_media_id: input.coverMediaId,
     status: input.status,
-  }
+  } satisfies TablesInsert<'posts'>
   let postId = id
 
   if (postId) {
@@ -107,7 +103,7 @@ export async function savePost(id: string | undefined, input: PostDraftInput) {
   if (input.tagIds.length) {
     const { error: tagError } = await getSupabase()
       .from('post_tags')
-      .insert(input.tagIds.map(tag_id => ({ post_id: postId, tag_id })))
+      .insert(input.tagIds.map(tag_id => ({ post_id: postId, tag_id }) satisfies TablesInsert<'post_tags'>))
     if (tagError) throw tagError
   }
 
@@ -165,7 +161,7 @@ export async function listTaxonomy(kind: 'categories' | 'tags') {
       .select('id,name,slug,description')
       .order('name')
     if (error) throw error
-    return data as TaxonomyItem[]
+    return data
   }
 
   const { data, error } = await getSupabase()
@@ -173,7 +169,7 @@ export async function listTaxonomy(kind: 'categories' | 'tags') {
     .select('id,name,slug')
     .order('name')
   if (error) throw error
-  return data as TaxonomyItem[]
+  return data
 }
 
 export async function saveTaxonomy(kind: 'categories' | 'tags', item: TaxonomyDraft) {
@@ -208,7 +204,7 @@ export async function listMedia() {
     .select('id,bucket_id,object_path,alt_text,mime_type,size_bytes,created_at')
     .order('created_at', { ascending: false })
   if (error) throw error
-  return data as AdminMedia[]
+  return data
 }
 
 export async function uploadMedia(file: File, altText: string) {
@@ -234,7 +230,7 @@ export async function uploadMedia(file: File, altText: string) {
     .select('id,bucket_id,object_path,alt_text,mime_type,size_bytes,created_at')
     .single()
   if (error) throw error
-  return data as AdminMedia
+  return data
 }
 
 export function getPublicImageUrl(media: Pick<AdminMedia, 'bucket_id' | 'object_path'>) {
