@@ -1,4 +1,8 @@
-import { assertAllowedContent, getPostImagesPublicUrlPrefix } from '@chen-blog/content-rules'
+import {
+  assertAllowedContent,
+  assertPublishablePostFields,
+  getPostImagesPublicUrlPrefix,
+} from '@chen-blog/content-rules'
 
 export default defineEventHandler(async (event) => {
   requireAllowedCmsOrigin(event)
@@ -8,7 +12,7 @@ export default defineEventHandler(async (event) => {
   const serviceClient = getServiceRoleClient(event)
   const { data: post, error: postError } = await serviceClient
     .from('posts')
-    .select('content,status,deleted_at')
+    .select('title,slug,content,status,deleted_at')
     .eq('id', postId)
     .maybeSingle()
   if (postError) throw createError({ statusCode: 502, statusMessage: postError.message })
@@ -20,6 +24,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 500, statusMessage: 'Supabase public configuration is missing.' })
   }
   try {
+    assertPublishablePostFields(post)
     await assertAllowedContent(post.content, {
       allowedImagePrefixes: [getPostImagesPublicUrlPrefix(config.public.supabaseUrl)],
     })

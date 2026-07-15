@@ -83,6 +83,41 @@ export type ContentValidationOptions = {
   allowedImagePrefixes?: readonly string[]
 }
 
+export type PublishablePostFields = {
+  title: string
+  slug: string
+  content: string
+}
+
+export const postSlugPattern = /^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u
+
+export function isValidPostSlug(value: string, maxLength = 200): boolean {
+  return value.length <= maxLength && postSlugPattern.test(value)
+}
+
+export function validatePublishablePostFields(post: PublishablePostFields): string[] {
+  const issues: string[] = []
+  const title = post.title.trim()
+  const slug = post.slug.trim()
+
+  if (!title) issues.push('发布前请先填写文章标题。')
+  else if (title.length > 200) issues.push('文章标题不能超过 200 个字符。')
+
+  if (!slug) issues.push('发布前请先填写文章 Slug。')
+  else if (!isValidPostSlug(post.slug)) {
+    issues.push('Slug 只能使用文字、数字和单个连字符，且不能以连字符开头或结尾。')
+  }
+
+  if (!post.content.trim()) issues.push('发布前请先填写文章正文。')
+
+  return issues
+}
+
+export function assertPublishablePostFields(post: PublishablePostFields): void {
+  const issues = validatePublishablePostFields(post)
+  if (issues.length) throw new Error(issues.join(' '))
+}
+
 export function isAllowedContentUrl(url: string): boolean {
   try {
     const protocol = new URL(url, 'https://chen-blog.local').protocol

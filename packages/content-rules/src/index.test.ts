@@ -2,9 +2,12 @@ import { parse } from 'comark'
 import { describe, expect, it } from 'vitest'
 import {
   assertAllowedContent,
+  assertPublishablePostFields,
   createContentSecurityPlugins,
   getPostImagesPublicUrlPrefix,
+  isValidPostSlug,
   validateContentSource,
+  validatePublishablePostFields,
 } from './index'
 
 const imagePrefix = getPostImagesPublicUrlPrefix('https://project.supabase.co')
@@ -146,5 +149,48 @@ describe('createContentSecurityPlugins', () => {
     })
 
     expect(collectElementTags(tree.nodes)).not.toContain('input')
+  })
+})
+
+describe('publishable post fields', () => {
+  const validPost = {
+    title: '一篇可以发布的文章',
+    slug: 'publishable-post-2026',
+    content: '# 正文',
+  }
+
+  it.each([
+    'article-slug',
+    'nuxt-4',
+    '中文标题',
+    '中文-2026',
+  ])('accepts route-safe slug %s', (slug) => {
+    expect(isValidPostSlug(slug)).toBe(true)
+  })
+
+  it.each([
+    'article/slug',
+    'article slug',
+    ' article-slug ',
+    '-article',
+    'article-',
+    'article--slug',
+    'article?draft=true',
+  ])('rejects unsafe slug %s', (slug) => {
+    expect(isValidPostSlug(slug)).toBe(false)
+  })
+
+  it('accepts a complete article', () => {
+    expect(validatePublishablePostFields(validPost)).toEqual([])
+    expect(() => assertPublishablePostFields(validPost)).not.toThrow()
+  })
+
+  it.each([
+    [{ title: '   ' }, '文章标题'],
+    [{ slug: 'invalid slug' }, 'Slug'],
+    [{ content: '\n\t' }, '文章正文'],
+  ] as const)('rejects incomplete publication fields: %o', (overrides, expectedMessage) => {
+    expect(() => assertPublishablePostFields({ ...validPost, ...overrides }))
+      .toThrow(expectedMessage)
   })
 })

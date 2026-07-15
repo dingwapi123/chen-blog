@@ -1,10 +1,11 @@
 import type { PostDraftInput } from '@chen-blog/shared-types'
+import { isValidPostSlug, postSlugPattern } from '@chen-blog/content-rules'
 import type { AdminPost } from '@/features/content/api'
 
-export const postSlugPattern = /^[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*$/u
+export { postSlugPattern }
 
 export function isValidSlug(value: string, maxLength = 200): boolean {
-  return value.length <= maxLength && postSlugPattern.test(value)
+  return isValidPostSlug(value, maxLength)
 }
 
 export function createPostDraft(post: AdminPost | null): PostDraftInput {
