@@ -4,15 +4,19 @@ import {
   getPostImagesPublicUrlPrefix,
 } from '@chen-blog/content-rules'
 
+const UUID_PATTERN = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i
+
 export default defineEventHandler(async (event) => {
   requireAllowedCmsOrigin(event)
   await requireOwner(event)
   const postId = getRouterParam(event, 'postId')
-  if (!postId) throw createError({ statusCode: 400, statusMessage: 'Post ID is required.' })
+  if (!postId || !UUID_PATTERN.test(postId)) {
+    throw createError({ statusCode: 400, statusMessage: 'A valid post ID is required.' })
+  }
   const serviceClient = getServiceRoleClient(event)
   const { data: post, error: postError } = await serviceClient
     .from('posts')
-    .select('title,slug,content,status,deleted_at')
+    .select('title,slug,content,status,updated_at,deleted_at')
     .eq('id', postId)
     .maybeSingle()
   if (postError) throw createError({ statusCode: 502, statusMessage: postError.message })
@@ -36,12 +40,13 @@ export default defineEventHandler(async (event) => {
     .update({ status: 'published', deleted_at: null })
     .eq('id', postId)
     .eq('status', 'draft')
+    .eq('updated_at', post.updated_at)
     .is('deleted_at', null)
     .select('id,status,published_at')
     .maybeSingle()
   if (error) throw createError({ statusCode: 502, statusMessage: error.message })
   if (!data || data.status !== 'published' || !data.published_at) {
-    throw createError({ statusCode: 404, statusMessage: 'Post not found.' })
+    throw createError({ statusCode: 409, statusMessage: 'The draft changed while it was being published. Please retry.' })
   }
   return { id: data.id, status: 'published' as const, publishedAt: data.published_at }
 })
