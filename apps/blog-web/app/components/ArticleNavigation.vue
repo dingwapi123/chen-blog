@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ArrowLeft, ArrowRight } from '@lucide/vue'
-import type { ArticleNavigationItem } from '~/utils/public-blog'
+import type { ArticleNavigationItem } from '@chen-blog/shared-types'
 
 defineProps<{
   previous: ArticleNavigationItem | null

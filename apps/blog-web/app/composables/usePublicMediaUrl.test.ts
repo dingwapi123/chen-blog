@@ -19,7 +19,6 @@ describe('usePublicMediaUrl', () => {
     vi.stubGlobal('useRuntimeConfig', vi.fn(() => ({
       public: {
         supabaseUrl: 'https://example.supabase.co',
-        supabasePublishableKey: 'sb_publishable_test',
       },
     })))
 
@@ -37,10 +36,17 @@ describe('usePublicMediaUrl', () => {
     vi.stubGlobal('useRuntimeConfig', vi.fn(() => ({
       public: {
         supabaseUrl: '',
-        supabasePublishableKey: '',
       },
     })))
 
     expect(usePublicMediaUrl()(media)).toBe('')
+  })
+
+  it('does not create a URL for a bucket outside the public article library', () => {
+    vi.stubGlobal('useRuntimeConfig', vi.fn(() => ({
+      public: { supabaseUrl: 'https://example.supabase.co' },
+    })))
+
+    expect(usePublicMediaUrl()({ ...media, bucketId: 'private-images' })).toBe('')
   })
 })

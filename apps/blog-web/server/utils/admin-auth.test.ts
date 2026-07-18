@@ -31,16 +31,17 @@ describe('admin authentication', () => {
   let authorization: string | undefined
   let runtimeConfig: {
     supabaseServiceRoleKey: string
-    public: { supabaseUrl: string; supabasePublishableKey: string }
+    supabasePublishableKey: string
+    public: { supabaseUrl: string }
   }
 
   beforeEach(() => {
     authorization = 'Bearer owner-token'
     runtimeConfig = {
       supabaseServiceRoleKey: 'server-secret',
+      supabasePublishableKey: 'publishable-key',
       public: {
         supabaseUrl: 'https://project.supabase.co',
-        supabasePublishableKey: 'publishable-key',
       },
     }
     createClientMock.mockReset()
@@ -78,7 +79,7 @@ describe('admin authentication', () => {
     expect(client.auth.getUser).toHaveBeenCalledWith('owner-token')
     expect(createClientMock).toHaveBeenCalledWith(
       runtimeConfig.public.supabaseUrl,
-      runtimeConfig.public.supabasePublishableKey,
+      runtimeConfig.supabasePublishableKey,
       expect.objectContaining({ global: { headers: { Authorization: 'Bearer owner-token' } } }),
     )
   })

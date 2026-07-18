@@ -39,6 +39,18 @@ export type PostDetail = PostPreview & {
   cover: MediaRecord | null
 }
 
+export type ArticleNavigationItem = Pick<PostPreview, 'title' | 'slug'>
+
+export type ArticleNavigation = {
+  previous: ArticleNavigationItem | null
+  next: ArticleNavigationItem | null
+}
+
+export type PublicPostPage = {
+  post: PostDetail
+  navigation: ArticleNavigation
+}
+
 export type PostDraftInput = {
   title: string
   slug: string

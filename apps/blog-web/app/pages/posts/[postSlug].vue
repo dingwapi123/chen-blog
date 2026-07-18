@@ -8,12 +8,12 @@ const postSlug = computed(() => String(route.params.postSlug))
 const { data: articleData } = await useAsyncData(
   () => `post-${postSlug.value}`,
   async () => {
-    const post = await fetchPublishedPost(postSlug.value)
-    const headings = post ? await extractArticleHeadings(post.content) : []
-    return { post, headings }
+    const page = await fetchPublishedPostPage(postSlug.value)
+    const headings = page ? await extractArticleHeadings(page.post.content) : []
+    return { page, headings }
   },
 )
-const post = computed(() => articleData.value?.post ?? null)
+const post = computed(() => articleData.value?.page?.post ?? null)
 const articleHeadings = computed(() => articleData.value?.headings ?? [])
 const isNotFound = computed(() => !post.value)
 const resolvePublicMediaUrl = usePublicMediaUrl()
@@ -21,12 +21,7 @@ const resolvePublicMediaUrl = usePublicMediaUrl()
 useNotFoundResponse(isNotFound, '文章不存在或尚未发布。')
 
 const coverUrl = computed(() => post.value?.cover ? resolvePublicMediaUrl(post.value.cover) : '')
-const { data: navigation } = await useAsyncData(
-  () => `post-navigation-${postSlug.value}`,
-  () => post.value
-    ? fetchArticleNavigation(post.value)
-    : Promise.resolve({ previous: null, next: null }),
-)
+const navigation = computed(() => articleData.value?.page?.navigation ?? { previous: null, next: null })
 
 usePageSeo({
   title: computed(() => post.value?.title ?? '没有找到这篇文章'),

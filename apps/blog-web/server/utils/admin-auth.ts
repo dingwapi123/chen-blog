@@ -6,10 +6,10 @@ export async function requireOwner(event: Parameters<typeof getRequestHeader>[0]
   const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : undefined
   if (!token) throw createError({ statusCode: 401, statusMessage: 'Missing access token.' })
   const config = useRuntimeConfig(event)
-  if (!config.public.supabaseUrl || !config.public.supabasePublishableKey) {
+  if (!config.public.supabaseUrl || !config.supabasePublishableKey) {
     throw createError({ statusCode: 500, statusMessage: 'Supabase public configuration is missing.' })
   }
-  const client = createClient<Database>(config.public.supabaseUrl, config.public.supabasePublishableKey, {
+  const client = createClient<Database>(config.public.supabaseUrl, config.supabasePublishableKey, {
     auth: { persistSession: false, autoRefreshToken: false },
     global: { headers: { Authorization: `Bearer ${token}` } },
   })

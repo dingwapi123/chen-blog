@@ -1,6 +1,5 @@
-import type { Database } from '@chen-blog/database-types'
+import { getPostImagesPublicUrlPrefix } from '@chen-blog/content-rules'
 import type { MediaRecord } from '@chen-blog/shared-types'
-import { createClient } from '@supabase/supabase-js'
 
 /**
  * Capture the public Supabase client while the Nuxt setup context is active.
@@ -8,15 +7,17 @@ import { createClient } from '@supabase/supabase-js'
  */
 export function usePublicMediaUrl(): (media: MediaRecord) => string {
   const config = useRuntimeConfig()
-  const client = config.public.supabaseUrl && config.public.supabasePublishableKey
-    ? createClient<Database>(config.public.supabaseUrl, config.public.supabasePublishableKey, {
-        auth: { persistSession: false, autoRefreshToken: false },
-      })
-    : null
+  const publicPrefix = config.public.supabaseUrl
+    ? getPostImagesPublicUrlPrefix(config.public.supabaseUrl)
+    : ''
 
   return (media) => {
-    if (!client) return ''
+    if (!publicPrefix || media.bucketId !== 'post-images') return ''
 
-    return client.storage.from(media.bucketId).getPublicUrl(media.objectPath).data.publicUrl
+    const objectPath = media.objectPath
+      .split('/')
+      .map(segment => encodeURIComponent(segment))
+      .join('/')
+    return new URL(objectPath, publicPrefix).href
   }
 }

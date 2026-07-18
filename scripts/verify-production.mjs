@@ -66,6 +66,11 @@ function assertNoBrowserSecret(source, label) {
   assert.ok(!source.includes('SUPABASE_SERVICE_ROLE_KEY'), `${label} contains a server secret variable`)
 }
 
+function assertNoDirectPublicDataApi(source, label) {
+  assert.ok(!source.includes('/rest/v1/'), `${label} still references the Supabase Data API directly`)
+  assert.ok(!source.includes('supabasePublishableKey'), `${label} exposes the Nitro-only publishable-key config`)
+}
+
 function assertEdgeHit(response, label) {
   assertIncludes(response.headers.get('cache-status'), '"Netlify Edge"; hit', `${label} Edge cache hit`)
   const age = response.headers.get('age')
@@ -106,6 +111,7 @@ async function scanBrowserScripts(base, initialSources, label) {
     const script = await request(base, scriptUrl)
     assertStatus(script, 200, `${label} script ${scriptUrl}`)
     assertNoBrowserSecret(script.body, `${label} script ${scriptUrl}`)
+    if (label === 'blog') assertNoDirectPublicDataApi(script.body, `${label} script ${scriptUrl}`)
 
     for (const match of script.body.matchAll(/["']([^"']+\.js(?:\?[^"']*)?)["']/g)) {
       const dependency = new URL(match[1], scriptUrl)
@@ -136,6 +142,27 @@ for (const path of publicPages) {
 const home = await request(blogUrl, '/')
 assertIncludes(home.body, '陈信至', 'blog home')
 assertIncludes(home.body, 'rel="canonical"', 'blog home canonical')
+assertNoDirectPublicDataApi(home.body, 'blog HTML')
+
+const publicApiProbe = `/api/public/posts?cache_verify=${Date.now()}-${crypto.randomUUID()}`
+const publicApiWarmup = await request(blogUrl, publicApiProbe)
+const publicApiHit = await request(blogUrl, publicApiProbe)
+assertStatus(publicApiWarmup, 200, 'public posts API warmup')
+assertStatus(publicApiHit, 200, 'public posts API hit')
+assertStrictPublicCache(publicApiWarmup.response, 'public posts API warmup')
+assertStrictPublicCache(publicApiHit.response, 'public posts API hit')
+assertIncludes(publicApiWarmup.response.headers.get('content-type'), 'application/json', 'public posts API content type')
+assertEdgeHit(publicApiHit.response, 'public posts API hit')
+const publicApiPosts = JSON.parse(publicApiWarmup.body)
+assert.ok(Array.isArray(publicApiPosts) && publicApiPosts.length > 0, 'public posts API must return published DTOs')
+assert.ok(!publicApiWarmup.body.includes('published_at'), 'public posts API must not expose database column names')
+
+const publicPostSlug = publicApiPosts[0]?.slug
+assert.equal(typeof publicPostSlug, 'string', 'public posts API must include a slug')
+const publicPostApi = await request(blogUrl, `/api/public/posts/${encodeURIComponent(publicPostSlug)}`)
+assertStatus(publicPostApi, 200, 'public post API')
+assertStrictPublicCache(publicPostApi.response, 'public post API')
+assertIncludes(publicPostApi.body, '"navigation"', 'public post API navigation DTO')
 
 const rss = await request(blogUrl, '/rss.xml')
 assertIncludes(rss.response.headers.get('content-type'), 'application/rss+xml', 'RSS content type')

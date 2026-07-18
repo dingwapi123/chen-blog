@@ -66,11 +66,14 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     supabaseServiceRoleKey: '',
+    supabasePublishableKey:
+      process.env.NUXT_SUPABASE_PUBLISHABLE_KEY
+      ?? process.env.NUXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+      ?? '',
     cmsOrigin: 'http://localhost:5173',
     public: {
       siteUrl: '',
       supabaseUrl: '',
-      supabasePublishableKey: '',
     },
   },
   routeRules: {
@@ -84,6 +87,7 @@ export default defineNuxtConfig({
     '/rss.xml': netlifyContentCache(),
     '/sitemap.xml': netlifyContentCache(),
     '/robots.txt': netlifyContentCache(),
+    '/api/public/**': netlifyContentCache(),
     '/api/**': { cache: false },
   },
 })
