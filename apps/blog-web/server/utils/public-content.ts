@@ -13,7 +13,6 @@ import {
   type QueryData,
   type SupabaseClient,
 } from '@supabase/supabase-js'
-import { getDemoCategories, getDemoPost, getDemoPosts, getDemoTags } from '~~/app/data/demo'
 
 const PUBLIC_POST_SELECT = 'id,title,slug,summary,content,published_at,updated_at,categories(name,slug),post_tags(tags(id,name,slug)),media:cover_media_id(id,bucket_id,object_path,alt_text,created_at)' as const
 
@@ -26,11 +25,9 @@ function selectPublicPosts(client: PublicClient) {
 
 type PublicPostRow = QueryData<ReturnType<typeof selectPublicPosts>>[number]
 
-function getPublicClient(event: PublicRequestEvent): PublicClient | null {
+function getPublicClient(event: PublicRequestEvent): PublicClient {
   const config = useRuntimeConfig(event)
   if (!config.public.supabaseUrl || !config.supabasePublishableKey) {
-    if (import.meta.dev) return null
-
     throw createError({
       statusCode: 500,
       statusMessage: 'Supabase public data configuration is missing.',
@@ -103,7 +100,6 @@ function throwDataApiError(error: { message: string }): never {
 
 export async function listPublishedPosts(event: PublicRequestEvent): Promise<PostPreview[]> {
   const client = getPublicClient(event)
-  if (!client) return getDemoPosts()
 
   const { data, error } = await selectPublicPosts(client)
     .order('published_at', { ascending: false })
@@ -118,11 +114,6 @@ export async function getPublishedPostPage(
   postSlug: string,
 ): Promise<PublicPostPage | null> {
   const client = getPublicClient(event)
-  if (!client) {
-    const post = getDemoPost(postSlug)
-    if (!post) return null
-    return { post, navigation: buildNavigation(getDemoPosts(), post.id) }
-  }
 
   const [postResult, navigationResult] = await Promise.all([
     selectPublicPosts(client).eq('slug', postSlug).maybeSingle(),
@@ -145,7 +136,6 @@ export async function getPublishedPostPage(
 
 export async function listPublicCategories(event: PublicRequestEvent): Promise<CategorySummary[]> {
   const client = getPublicClient(event)
-  if (!client) return getDemoCategories()
 
   const { data, error } = await client
     .from('categories')
@@ -158,7 +148,6 @@ export async function listPublicCategories(event: PublicRequestEvent): Promise<C
 
 export async function listPublicTags(event: PublicRequestEvent): Promise<TagSummary[]> {
   const client = getPublicClient(event)
-  if (!client) return getDemoTags()
 
   const { data, error } = await client
     .from('tags')
@@ -171,14 +160,6 @@ export async function listPublicTags(event: PublicRequestEvent): Promise<TagSumm
 
 export async function listPublicRssPosts(event: PublicRequestEvent) {
   const client = getPublicClient(event)
-  if (!client) {
-    return getDemoPosts().slice(0, 30).map(post => ({
-      title: post.title,
-      slug: post.slug,
-      summary: post.summary,
-      publishedAt: post.publishedAt,
-    }))
-  }
 
   const { data, error } = await client
     .from('posts')
@@ -200,13 +181,6 @@ export async function listPublicRssPosts(event: PublicRequestEvent) {
 
 export async function listPublicSitemapEntries(event: PublicRequestEvent) {
   const client = getPublicClient(event)
-  if (!client) {
-    return {
-      posts: getDemoPosts().map(post => ({ slug: post.slug, updatedAt: post.updatedAt })),
-      categories: getDemoCategories().map(category => ({ slug: category.slug, updatedAt: undefined })),
-      tags: getDemoTags().map(tag => ({ slug: tag.slug, updatedAt: undefined })),
-    }
-  }
 
   const [postsResult, categoriesResult, tagsResult] = await Promise.all([
     client.from('posts').select('id,slug,updated_at').order('published_at', { ascending: false }).order('id', { ascending: false }),

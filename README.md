@@ -1,6 +1,6 @@
 # Chen Blog
 
-个人技术博客与独立 CMS 的 pnpm monorepo。架构与安全约束见 [V1.0.13 技术方案](docs/个人技术博客-技术方案-V1.0.13.md)。
+个人技术博客与独立 CMS 的 pnpm monorepo。架构与安全约束见 [V1.0.14 技术方案](docs/个人技术博客-技术方案-V1.0.14.md)。
 
 公开端使用 Nuxt 4、Nuxt UI、Tailwind CSS v4、Comark 与 Nuxt Image；CMS 使用 Vue 3、Element Plus、CodeMirror 和自研内容工作台。工作台借鉴成熟 Vue 3 后台的信息架构，但不导入其权限、请求、主题或图表体系。两端统一使用 `@lucide/vue` 图标并支持系统/手动浅色与暗色主题。CMS V1 只编辑 Markdown/Comark 源码，不提供草稿最终预览，也不引入 Tailwind、ECharts、`vue-echarts` 或 Yjs。
 
@@ -20,7 +20,7 @@ pnpm dev:cms
 
 数据库维护需要 Supabase CLI `2.109.1` 或更高版本。首次在新机器上先执行 `pnpm db:link`；随后使用 `pnpm db:push` 应用 migration、`pnpm db:types` 生成类型。`pnpm db:test` 通过 Management API 的 `db query --linked` 直接测试这个专用远程项目，不启动 Docker；测试文件使用事务回滚，禁止连接生产共享数据库。
 
-`pnpm db:seed` 可重复写入中文占位文章，仅用于开发或演示；它不会创建 owner。正式内容准备完成后可以在 CMS 中替换这些占位内容。
+`pnpm db:seed` 可重复把中文占位文章写入远程数据库，仅用于开发或演示；它不会创建 owner，也不是应用的运行时 mock。正式内容准备完成后可以在 CMS 中替换这些占位内容。博客在任何环境都必须配置远程 Supabase，缺少配置时不会回退到代码内置文章。
 
 ## 首次上线
 
