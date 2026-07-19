@@ -37,7 +37,7 @@ const returnTo = computed(() => {
 const publicPostUrl = computed(() => {
   if (post.value?.status !== 'published') return ''
   const base = (import.meta.env.VITE_BLOG_URL || 'http://localhost:3000').replace(/\/$/, '')
-  return `${base}/posts/${encodeURIComponent(post.value.slug)}`
+  return `${base}/posts/${encodeURIComponent(post.value.id)}`
 })
 
 const post = shallowRef<AdminPost | null>(null)
@@ -135,7 +135,7 @@ async function recoverPartialSave(error: PostSavePartialError, publishRequested 
 
   try {
     // Route first: even if the following reload fails, another save updates the
-    // row that was just created instead of inserting a duplicate slug.
+    // row that was just created instead of inserting a duplicate draft.
     await replaceNewPostRoute(error.postId)
   } catch {
     ElMessage.error(

@@ -31,7 +31,6 @@ function createPost(status: AdminPost['status']): AdminPost {
   return {
     id: 'post-1',
     title: '当前标题',
-    slug: 'current-post',
     summary: '当前摘要',
     content: '# 当前正文',
     status,

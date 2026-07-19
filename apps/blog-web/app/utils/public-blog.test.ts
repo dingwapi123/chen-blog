@@ -29,12 +29,12 @@ describe('public blog API client', () => {
     ])
   })
 
-  it('encodes the article slug before requesting its Nitro endpoint', async () => {
+  it('requests an article from its UUID-based Nitro endpoint', async () => {
     const page = { post: { title: '文章' }, navigation: {} } as PublicPostPage
     fetchMock.mockResolvedValue(page)
 
-    await expect(fetchPublishedPostPage('路径 / 空格')).resolves.toBe(page)
-    expect(fetchMock).toHaveBeenCalledWith('/api/public/posts/%E8%B7%AF%E5%BE%84%20%2F%20%E7%A9%BA%E6%A0%BC')
+    await expect(fetchPublishedPostPage('dfe9ce73-3ed3-48d5-b9ed-663ce94f5973')).resolves.toBe(page)
+    expect(fetchMock).toHaveBeenCalledWith('/api/public/posts/dfe9ce73-3ed3-48d5-b9ed-663ce94f5973')
   })
 
   it('maps a Nitro 404 to an absent public article', async () => {

@@ -29,7 +29,6 @@ function result(id: string, title: string): PostListResult {
     items: [{
       id,
       title,
-      slug: id,
       summary: '',
       status: 'draft',
       category_id: null,

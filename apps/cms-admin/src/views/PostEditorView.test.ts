@@ -79,7 +79,6 @@ vi.mock('@/features/content/api', () => ({
 
 const draftInput: PostDraftInput = {
   title: '新草稿',
-  slug: 'new-draft',
   summary: '',
   content: '# 正文',
   categoryId: null,
@@ -91,7 +90,6 @@ const draftInput: PostDraftInput = {
 const savedPost = {
   id: 'created-post-1',
   title: draftInput.title,
-  slug: draftInput.slug,
   summary: draftInput.summary,
   content: draftInput.content,
   status: 'draft',

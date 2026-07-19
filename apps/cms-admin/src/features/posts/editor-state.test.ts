@@ -3,14 +3,12 @@ import type { AdminPost } from '@/features/content/api'
 import {
   createPostDraft,
   getPostDraftFingerprint,
-  isValidSlug,
 } from '@/features/posts/editor-state'
 
 function createPost(overrides: Partial<AdminPost> = {}): AdminPost {
   return {
     id: 'post-1',
     title: '文章标题',
-    slug: 'article-slug',
     summary: '摘要',
     content: '# 正文',
     status: 'draft',
@@ -25,26 +23,6 @@ function createPost(overrides: Partial<AdminPost> = {}): AdminPost {
 }
 
 describe('editor state', () => {
-  it.each([
-    'article-slug',
-    'nuxt-4',
-    '中文标题',
-    '中文-2026',
-  ])('accepts route-safe slug %s', (slug) => {
-    expect(isValidSlug(slug)).toBe(true)
-  })
-
-  it.each([
-    'article/slug',
-    'article slug',
-    '-article',
-    'article-',
-    'article--slug',
-    'article?draft=true',
-  ])('rejects unsafe slug %s', (slug) => {
-    expect(isValidSlug(slug)).toBe(false)
-  })
-
   it('keeps archived records archived and never models published as directly editable', () => {
     expect(createPostDraft(createPost({ status: 'archived' })).status).toBe('archived')
     expect(createPostDraft(createPost({ status: 'published' })).status).toBe('draft')

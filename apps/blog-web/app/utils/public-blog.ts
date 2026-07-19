@@ -9,9 +9,9 @@ export async function fetchPublishedPosts(): Promise<PostPreview[]> {
   return await $fetch<PostPreview[]>('/api/public/posts')
 }
 
-export async function fetchPublishedPostPage(postSlug: string): Promise<PublicPostPage | null> {
+export async function fetchPublishedPostPage(postId: string): Promise<PublicPostPage | null> {
   try {
-    return await $fetch<PublicPostPage>(`/api/public/posts/${encodeURIComponent(postSlug)}`)
+    return await $fetch<PublicPostPage>(`/api/public/posts/${encodeURIComponent(postId)}`)
   } catch (error) {
     if (getHttpStatus(error) === 404) return null
     throw error

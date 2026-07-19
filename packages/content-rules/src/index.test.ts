@@ -5,7 +5,7 @@ import {
   assertPublishablePostFields,
   createContentSecurityPlugins,
   getPostImagesPublicUrlPrefix,
-  isValidPostSlug,
+  isValidSlug,
   validateContentSource,
   validatePublishablePostFields,
 } from './index'
@@ -152,20 +152,14 @@ describe('createContentSecurityPlugins', () => {
   })
 })
 
-describe('publishable post fields', () => {
-  const validPost = {
-    title: '一篇可以发布的文章',
-    slug: 'publishable-post-2026',
-    content: '# 正文',
-  }
-
+describe('taxonomy slugs', () => {
   it.each([
     'article-slug',
     'nuxt-4',
     '中文标题',
     '中文-2026',
   ])('accepts route-safe slug %s', (slug) => {
-    expect(isValidPostSlug(slug)).toBe(true)
+    expect(isValidSlug(slug)).toBe(true)
   })
 
   it.each([
@@ -177,8 +171,15 @@ describe('publishable post fields', () => {
     'article--slug',
     'article?draft=true',
   ])('rejects unsafe slug %s', (slug) => {
-    expect(isValidPostSlug(slug)).toBe(false)
+    expect(isValidSlug(slug)).toBe(false)
   })
+})
+
+describe('publishable post fields', () => {
+  const validPost = {
+    title: '一篇可以发布的文章',
+    content: '# 正文',
+  }
 
   it('accepts a complete article', () => {
     expect(validatePublishablePostFields(validPost)).toEqual([])
@@ -187,7 +188,6 @@ describe('publishable post fields', () => {
 
   it.each([
     [{ title: '   ' }, '文章标题'],
-    [{ slug: 'invalid slug' }, 'Slug'],
     [{ content: '\n\t' }, '文章正文'],
   ] as const)('rejects incomplete publication fields: %o', (overrides, expectedMessage) => {
     expect(() => assertPublishablePostFields({ ...validPost, ...overrides }))

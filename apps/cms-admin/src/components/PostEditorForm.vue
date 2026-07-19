@@ -3,7 +3,7 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { Check, Circle, Clock3, FileText, ImagePlus, RotateCcw, Send } from '@lucide/vue'
 import { computed, reactive, shallowRef, useTemplateRef, watch } from 'vue'
 import type { PostDraftInput } from '@chen-blog/shared-types'
-import { calculateReadingMinutes, toSlug } from '@chen-blog/shared-utils'
+import { calculateReadingMinutes } from '@chen-blog/shared-utils'
 import MarkdownEditor, { type MarkdownEditorExpose } from '@/components/MarkdownEditor.vue'
 import MediaPickerDialog from '@/components/MediaPickerDialog.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
@@ -13,11 +13,7 @@ import {
   type AdminPost,
   type TaxonomyItem,
 } from '@/features/content/api'
-import {
-  createPostDraft,
-  getPostDraftFingerprint,
-  isValidSlug,
-} from '@/features/posts/editor-state'
+import { createPostDraft, getPostDraftFingerprint } from '@/features/posts/editor-state'
 
 interface Props {
   post: AdminPost | null
@@ -45,7 +41,6 @@ const emit = defineEmits<{
 const editorForm = useTemplateRef<FormInstance>('editorForm')
 const markdownEditor = useTemplateRef<MarkdownEditorExpose>('markdownEditor')
 const mediaPickerOpen = shallowRef(false)
-const slugEdited = shallowRef(false)
 const contentError = shallowRef('')
 const initialFingerprint = shallowRef('')
 const model = reactive<PostDraftInput>(createPostDraft(null))
@@ -76,7 +71,6 @@ const headingCount = computed(() => (
 const readingMinutes = computed(() => calculateReadingMinutes(model.content))
 const publishChecks = computed(() => [
   { label: '文章标题', complete: Boolean(model.title.trim()) },
-  { label: '有效 Slug', complete: Boolean(model.slug) && isValidSlug(model.slug) },
   { label: '正文内容', complete: Boolean(model.content.trim()) },
   { label: '摘要（建议）', complete: Boolean(model.summary.trim()) },
 ])
@@ -84,16 +78,6 @@ const publishChecks = computed(() => [
 const rules: FormRules<PostDraftInput> = {
   title: [
     { required: true, message: '请输入文章标题。', trigger: 'blur' },
-  ],
-  slug: [
-    { required: true, message: '请输入文章 Slug。', trigger: 'blur' },
-    {
-      validator: (_rule, value: string, callback) => {
-        if (!value || isValidSlug(value)) callback()
-        else callback(new Error('Slug 只能使用文字、数字和单个连字符，且不能以连字符开头或结尾。'))
-      },
-      trigger: ['blur', 'change'],
-    },
   ],
 }
 
@@ -103,21 +87,12 @@ watch(
     const nextDraft = createPostDraft(post)
     Object.assign(model, nextDraft, { tagIds: [...nextDraft.tagIds] })
     initialFingerprint.value = getPostDraftFingerprint(nextDraft)
-    slugEdited.value = Boolean(post?.slug)
     contentError.value = ''
   },
   { immediate: true },
 )
 
 watch(isDirty, (dirty) => emit('dirtyChange', dirty), { immediate: true })
-
-function suggestSlug() {
-  if (!slugEdited.value) model.slug = toSlug(model.title)
-}
-
-function markSlugEdited() {
-  slugEdited.value = true
-}
 
 function escapeMarkdownAltText(value: string) {
   return value
@@ -186,7 +161,7 @@ async function submit(action: 'save' | 'publish') {
       <section class="document-fields" aria-labelledby="document-fields-title">
         <div class="section-heading">
           <span id="document-fields-title">文章信息</span>
-          <small>标题与公开地址</small>
+          <small>标题与内容概览</small>
         </div>
 
       <ElFormItem label="标题" prop="title">
@@ -196,21 +171,7 @@ async function submit(action: 'save' | 'publish') {
           :disabled="fieldsDisabled"
           maxlength="200"
           placeholder="文章标题"
-          @input="suggestSlug"
         />
-      </ElFormItem>
-
-      <ElFormItem label="Slug" prop="slug">
-        <ElInput
-          v-model="model.slug"
-          :disabled="fieldsDisabled"
-          maxlength="200"
-          placeholder="article-url-slug"
-          @input="markSlugEdited"
-        />
-        <span class="field-hint">
-          发布地址会使用它；发布后如需修改，请先转回草稿。
-        </span>
       </ElFormItem>
 
       <ElFormItem label="摘要">

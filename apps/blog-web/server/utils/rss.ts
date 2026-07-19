@@ -1,6 +1,6 @@
 export type RssPost = {
+  id: string
   title: string
-  slug: string
   summary: string
   publishedAt: string
 }
@@ -36,7 +36,7 @@ function formatRssDate(value: string): string {
 }
 
 function buildItem(post: RssPost, origin: string): string {
-  const postUrl = new URL(`/posts/${encodeURIComponent(post.slug)}`, `${origin}/`).toString()
+  const postUrl = new URL(`/posts/${encodeURIComponent(post.id)}`, `${origin}/`).toString()
   const escapedUrl = escapeXml(postUrl)
 
   return [

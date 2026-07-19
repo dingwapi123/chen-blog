@@ -23,24 +23,24 @@ describe('RSS XML helpers', () => {
     expect(feed).toContain('<description>构建 &lt; 学习 &gt; 记录</description>')
   })
 
-  it('encodes a slug as one URL path segment', () => {
+  it('uses the article UUID as its public URL segment', () => {
     const feed = buildWith({
       posts: [{
+        id: 'dfe9ce73-3ed3-48d5-b9ed-663ce94f5973',
         title: '安全 URL',
-        slug: 'hello/world?x=1&y=2',
         summary: '摘要',
         publishedAt,
       }],
     })
 
-    expect(feed).toContain('https://blog.example.com/posts/hello%2Fworld%3Fx%3D1%26y%3D2')
+    expect(feed).toContain('https://blog.example.com/posts/dfe9ce73-3ed3-48d5-b9ed-663ce94f5973')
   })
 
   it('escapes summaries and never exposes raw article content', () => {
     const feed = buildWith({
       posts: [{
+        id: 'dfe9ce73-3ed3-48d5-b9ed-663ce94f5973',
         title: '安全摘要',
-        slug: 'safe-summary',
         summary: 'before]]><script>alert(1)</script>&after',
         publishedAt,
       }],

@@ -3,20 +3,19 @@ import {
   assertPublishablePostFields,
   getPostImagesPublicUrlPrefix,
 } from '@chen-blog/content-rules'
-
-const UUID_PATTERN = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i
+import { isUuid } from '@chen-blog/shared-utils'
 
 export default defineEventHandler(async (event) => {
   requireAllowedCmsOrigin(event)
   await requireOwner(event)
   const postId = getRouterParam(event, 'postId')
-  if (!postId || !UUID_PATTERN.test(postId)) {
+  if (!postId || !isUuid(postId)) {
     throw createError({ statusCode: 400, statusMessage: 'A valid post ID is required.' })
   }
   const serviceClient = getServiceRoleClient(event)
   const { data: post, error: postError } = await serviceClient
     .from('posts')
-    .select('title,slug,content,status,updated_at,deleted_at')
+    .select('title,content,status,updated_at,deleted_at')
     .eq('id', postId)
     .maybeSingle()
   if (postError) throw createError({ statusCode: 502, statusMessage: postError.message })

@@ -2,6 +2,7 @@
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Pencil, Plus, RefreshCw, Search, Trash2 } from '@lucide/vue'
 import { computed, reactive, shallowRef, watch } from 'vue'
+import { isValidSlug } from '@chen-blog/content-rules'
 import { toSlug } from '@chen-blog/shared-utils'
 import AdminShell from '@/components/AdminShell.vue'
 import AdminPage from '@/components/common/AdminPage.vue'
@@ -15,7 +16,6 @@ import {
   saveTaxonomy,
   type TaxonomyItem,
 } from '@/features/content/api'
-import { isValidSlug } from '@/features/posts/editor-state'
 
 const props = defineProps<{ kind: 'categories' | 'tags' }>()
 const items = shallowRef<TaxonomyItem[]>([])

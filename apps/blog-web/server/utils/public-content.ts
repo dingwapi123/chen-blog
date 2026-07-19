@@ -14,7 +14,7 @@ import {
   type SupabaseClient,
 } from '@supabase/supabase-js'
 
-const PUBLIC_POST_SELECT = 'id,title,slug,summary,content,published_at,updated_at,categories(name,slug),post_tags(tags(id,name,slug)),media:cover_media_id(id,bucket_id,object_path,alt_text,created_at)' as const
+const PUBLIC_POST_SELECT = 'id,title,summary,content,published_at,updated_at,categories(name,slug),post_tags(tags(id,name,slug)),media:cover_media_id(id,bucket_id,object_path,alt_text,created_at)' as const
 
 type PublicClient = SupabaseClient<Database>
 type PublicRequestEvent = Parameters<typeof useRuntimeConfig>[0]
@@ -52,7 +52,6 @@ function mapPostPreview(row: PublicPostRow): PostPreview {
   return {
     id: row.id,
     title: row.title,
-    slug: row.slug,
     summary: row.summary,
     publishedAt: requirePublishedAt(row),
     updatedAt: row.updated_at,
@@ -79,7 +78,7 @@ function mapPostDetail(row: PublicPostRow): PostDetail {
 }
 
 function buildNavigation(
-  posts: Array<Pick<PostPreview, 'id' | 'title' | 'slug'>>,
+  posts: Array<Pick<PostPreview, 'id' | 'title'>>,
   currentId: string,
 ): ArticleNavigation {
   const currentIndex = posts.findIndex(post => post.id === currentId)
@@ -89,8 +88,8 @@ function buildNavigation(
   const next = posts[currentIndex - 1]
 
   return {
-    previous: previous ? { title: previous.title, slug: previous.slug } : null,
-    next: next ? { title: next.title, slug: next.slug } : null,
+    previous: previous ? { id: previous.id, title: previous.title } : null,
+    next: next ? { id: next.id, title: next.title } : null,
   }
 }
 
@@ -111,15 +110,15 @@ export async function listPublishedPosts(event: PublicRequestEvent): Promise<Pos
 
 export async function getPublishedPostPage(
   event: PublicRequestEvent,
-  postSlug: string,
+  postId: string,
 ): Promise<PublicPostPage | null> {
   const client = getPublicClient(event)
 
   const [postResult, navigationResult] = await Promise.all([
-    selectPublicPosts(client).eq('slug', postSlug).maybeSingle(),
+    selectPublicPosts(client).eq('id', postId).maybeSingle(),
     client
       .from('posts')
-      .select('id,title,slug')
+      .select('id,title')
       .order('published_at', { ascending: false })
       .order('id', { ascending: false }),
   ])
@@ -163,7 +162,7 @@ export async function listPublicRssPosts(event: PublicRequestEvent) {
 
   const { data, error } = await client
     .from('posts')
-    .select('id,title,slug,summary,published_at')
+    .select('id,title,summary,published_at')
     .order('published_at', { ascending: false })
     .order('id', { ascending: false })
     .limit(30)
@@ -172,7 +171,7 @@ export async function listPublicRssPosts(event: PublicRequestEvent) {
   return data.flatMap(post => post.published_at
     ? [{
         title: post.title,
-        slug: post.slug,
+        id: post.id,
         summary: post.summary,
         publishedAt: post.published_at,
       }]
@@ -183,7 +182,7 @@ export async function listPublicSitemapEntries(event: PublicRequestEvent) {
   const client = getPublicClient(event)
 
   const [postsResult, categoriesResult, tagsResult] = await Promise.all([
-    client.from('posts').select('id,slug,updated_at').order('published_at', { ascending: false }).order('id', { ascending: false }),
+    client.from('posts').select('id,updated_at').order('published_at', { ascending: false }).order('id', { ascending: false }),
     client.from('categories').select('slug,updated_at').order('name'),
     client.from('tags').select('slug,updated_at').order('name'),
   ])
@@ -192,7 +191,7 @@ export async function listPublicSitemapEntries(event: PublicRequestEvent) {
   if (error) return throwDataApiError(error)
 
   return {
-    posts: (postsResult.data ?? []).map(post => ({ slug: post.slug, updatedAt: post.updated_at })),
+    posts: (postsResult.data ?? []).map(post => ({ id: post.id, updatedAt: post.updated_at })),
     categories: (categoriesResult.data ?? []).map(category => ({ slug: category.slug, updatedAt: category.updated_at })),
     tags: (tagsResult.data ?? []).map(tag => ({ slug: tag.slug, updatedAt: tag.updated_at })),
   }

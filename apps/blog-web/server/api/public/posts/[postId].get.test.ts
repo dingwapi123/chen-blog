@@ -15,17 +15,24 @@ beforeAll(async () => {
   vi.stubGlobal('getRouterParam', getRouterParam)
   vi.stubGlobal('getPublishedPostPage', getPublishedPostPage)
   vi.stubGlobal('createError', vi.fn(({ statusCode, statusMessage }) => httpError(statusCode, statusMessage)))
-  handler = (await import('./[postSlug].get')).default
+  handler = (await import('./[postId].get')).default
 })
 
 beforeEach(() => {
-  getRouterParam.mockReset().mockReturnValue('published-post')
+  getRouterParam.mockReset().mockReturnValue('dfe9ce73-3ed3-48d5-b9ed-663ce94f5973')
   getPublishedPostPage.mockReset()
 })
 
 describe('GET public post route', () => {
-  it('rejects a missing slug before querying public content', async () => {
+  it('rejects a missing UUID before querying public content', async () => {
     getRouterParam.mockReturnValue(undefined)
+
+    await expect(handler({} as never)).rejects.toMatchObject({ statusCode: 400 })
+    expect(getPublishedPostPage).not.toHaveBeenCalled()
+  })
+
+  it('rejects a non-UUID route segment before querying public content', async () => {
+    getRouterParam.mockReturnValue('published-post')
 
     await expect(handler({} as never)).rejects.toMatchObject({ statusCode: 400 })
     expect(getPublishedPostPage).not.toHaveBeenCalled()
@@ -45,6 +52,6 @@ describe('GET public post route', () => {
     getPublishedPostPage.mockResolvedValue(page)
 
     await expect(handler({} as never)).resolves.toBe(page)
-    expect(getPublishedPostPage).toHaveBeenCalledWith(expect.anything(), 'published-post')
+    expect(getPublishedPostPage).toHaveBeenCalledWith(expect.anything(), 'dfe9ce73-3ed3-48d5-b9ed-663ce94f5973')
   })
 })

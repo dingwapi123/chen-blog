@@ -25,7 +25,6 @@ export type MediaRecord = {
 export type PostPreview = {
   id: string
   title: string
-  slug: string
   summary: string
   publishedAt: string
   updatedAt: string
@@ -39,7 +38,7 @@ export type PostDetail = PostPreview & {
   cover: MediaRecord | null
 }
 
-export type ArticleNavigationItem = Pick<PostPreview, 'title' | 'slug'>
+export type ArticleNavigationItem = Pick<PostPreview, 'id' | 'title'>
 
 export type ArticleNavigation = {
   previous: ArticleNavigationItem | null
@@ -53,7 +52,6 @@ export type PublicPostPage = {
 
 export type PostDraftInput = {
   title: string
-  slug: string
   summary: string
   content: string
   categoryId: string | null

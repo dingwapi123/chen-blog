@@ -46,7 +46,7 @@ function editorLocation(post: AdminPostListItem) {
 }
 
 function publicUrl(post: AdminPostListItem) {
-  return `${props.blogUrl.replace(/\/$/, '')}/posts/${encodeURIComponent(post.slug)}`
+  return `${props.blogUrl.replace(/\/$/, '')}/posts/${encodeURIComponent(post.id)}`
 }
 
 function formatDate(value: string | null) {
@@ -79,7 +79,6 @@ function handleCommand(id: string, command: RowCommand) {
           <RouterLink class="post-title" :to="editorLocation(row)">
             <strong>{{ row.title }}</strong>
             <span>{{ row.summary || '尚未填写摘要' }}</span>
-            <small>/{{ row.slug }}</small>
           </RouterLink>
         </template>
       </ElTableColumn>
@@ -169,7 +168,6 @@ function handleCommand(id: string, command: RowCommand) {
           {{ post.title }}
         </RouterLink>
         <p>{{ post.summary || '尚未填写摘要' }}</p>
-        <span class="post-mobile-item__slug">/{{ post.slug }}</span>
         <div class="post-mobile-item__actions">
           <RouterLink class="button" :to="editorLocation(post)">
             <Edit3 v-if="post.status === 'draft'" :size="15" aria-hidden="true" />
@@ -351,14 +349,6 @@ function handleCommand(id: string, command: RowCommand) {
     font-size: 0.8rem;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
-  }
-
-  .post-mobile-item__slug {
-    overflow: hidden;
-    color: var(--on-surface-faint);
-    font-size: 0.7rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .post-mobile-item__actions {

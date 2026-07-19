@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = extensions, public;
 
-select plan(71);
+select plan(72);
 
 -- Structural security invariants ------------------------------------------------
 
@@ -165,6 +165,18 @@ select is(
 select is(
   (
     select count(*)::integer
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'posts'
+      and column_name = 'slug'
+  ),
+  0,
+  'posts use their UUID primary key as the only public identifier'
+);
+
+select is(
+  (
+    select count(*)::integer
     from pg_constraint
     where conname in ('posts_category_id_fkey', 'post_tags_tag_id_fkey')
       and confdeltype = 'r'
@@ -260,7 +272,6 @@ values
 insert into public.posts (
   id,
   title,
-  slug,
   content,
   cover_media_id,
   category_id,
@@ -271,7 +282,6 @@ values
   (
     '99999999-9999-4999-8999-999999999931',
     'Public post',
-    'rls-public-post',
     'Published content',
     '99999999-9999-4999-8999-999999999921',
     '99999999-9999-4999-8999-999999999901',
@@ -281,7 +291,6 @@ values
   (
     '99999999-9999-4999-8999-999999999932',
     'Draft post',
-    'rls-draft-post',
     'Draft content',
     '99999999-9999-4999-8999-999999999922',
     '99999999-9999-4999-8999-999999999902',
@@ -291,7 +300,6 @@ values
   (
     '99999999-9999-4999-8999-999999999933',
     'Deleted post',
-    'rls-deleted-post',
     'Deleted content',
     null,
     '99999999-9999-4999-8999-999999999901',
@@ -301,7 +309,6 @@ values
   (
     '99999999-9999-4999-8999-999999999934',
     'Service draft',
-    'rls-service-draft',
     'Service draft content',
     null,
     null,
@@ -465,7 +472,7 @@ select is(
 select is((select count(*)::integer from public.profiles), 0, 'a non-owner cannot read the owner profile');
 
 select throws_ok(
-  $$insert into public.posts (title, slug, status) values ('Forbidden', 'rls-reader-post', 'draft')$$,
+  $$insert into public.posts (title, status) values ('Forbidden', 'draft')$$,
   '42501',
   'new row violates row-level security policy for table "posts"',
   'a non-owner cannot create drafts'
@@ -560,13 +567,13 @@ select is(
 select is((select count(*)::integer from public.profiles), 1, 'owner reads their own profile');
 
 select lives_ok(
-  $$insert into public.posts (id, title, slug, status)
-    values ('99999999-9999-4999-8999-999999999935', 'Owner draft', 'rls-owner-draft', 'draft')$$,
+  $$insert into public.posts (id, title, status)
+    values ('99999999-9999-4999-8999-999999999935', 'Owner draft', 'draft')$$,
   'owner can create a draft'
 );
 
 select throws_ok(
-  $$insert into public.posts (title, slug, status) values ('Direct publish', 'rls-direct-publish', 'published')$$,
+  $$insert into public.posts (title, status) values ('Direct publish', 'published')$$,
   '42501',
   'new row violates row-level security policy for table "posts"',
   'owner cannot insert a published post directly'
@@ -840,7 +847,7 @@ select ok(
 );
 
 select throws_ok(
-  $$insert into public.posts (title, slug, status) values ('Forbidden', 'rls-service-insert', 'draft')$$,
+  $$insert into public.posts (title, status) values ('Forbidden', 'draft')$$,
   '42501',
   'permission denied for table posts',
   'service role cannot insert posts'

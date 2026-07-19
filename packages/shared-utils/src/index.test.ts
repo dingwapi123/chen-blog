@@ -6,8 +6,24 @@ import {
   getThemeToggleLabel,
   getYear,
   isTheme,
+  isUuid,
   resolveTheme,
 } from './index'
+
+describe('UUID validation', () => {
+  it('accepts the database UUID format used by public article routes', () => {
+    expect(isUuid('cccccccc-cccc-4ccc-8ccc-cccccccccccc')).toBe(true)
+  })
+
+  it.each([
+    '',
+    'tools-should-step-back',
+    'cccccccccccc4ccc8ccccccccccccccc',
+    'cccccccc-cccc-4ccc-8ccc-cccccccccccZ',
+  ])('rejects invalid public article id %j', (value) => {
+    expect(isUuid(value)).toBe(false)
+  })
+})
 
 describe('theme rules', () => {
   it.each([

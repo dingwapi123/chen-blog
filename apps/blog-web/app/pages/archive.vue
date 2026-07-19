@@ -25,7 +25,7 @@ usePageSeo({
         <ol>
           <li v-for="post in group.posts" :key="post.id">
             <time :datetime="post.publishedAt">{{ formatDate(post.publishedAt) }}</time>
-            <NuxtLink :to="`/posts/${post.slug}`">
+            <NuxtLink :to="`/posts/${post.id}`">
               <span>{{ post.title }}</span>
               <ArrowUpRight :size="18" aria-hidden="true" />
             </NuxtLink>

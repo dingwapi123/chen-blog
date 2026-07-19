@@ -14,7 +14,7 @@ export default defineSitemapEventHandler(async (event) => {
 
   return [
     ...staticUrls,
-    ...entries.posts.map(post => ({ loc: `/posts/${encodeURIComponent(post.slug)}`, lastmod: post.updatedAt, changefreq: 'monthly' as const, priority: 0.8 as const })),
+    ...entries.posts.map(post => ({ loc: `/posts/${encodeURIComponent(post.id)}`, lastmod: post.updatedAt, changefreq: 'monthly' as const, priority: 0.8 as const })),
     ...entries.categories.map(category => ({ loc: `/categories/${encodeURIComponent(category.slug)}`, lastmod: category.updatedAt, changefreq: 'weekly' as const, priority: 0.6 as const })),
     ...entries.tags.map(tag => ({ loc: `/tags/${encodeURIComponent(tag.slug)}`, lastmod: tag.updatedAt, changefreq: 'weekly' as const, priority: 0.5 as const })),
   ]

@@ -7,10 +7,10 @@ import { getSupabase, getSupabaseUrl } from '@/lib/supabase'
 function selectAdminPost() {
   return getSupabase()
     .from('posts')
-    .select('id,title,slug,summary,content,status,category_id,cover_media_id,published_at,updated_at,deleted_at,post_tags(tag_id)')
+    .select('id,title,summary,content,status,category_id,cover_media_id,published_at,updated_at,deleted_at,post_tags(tag_id)')
 }
 
-const adminPostListColumns = 'id,title,slug,summary,status,category_id,updated_at,published_at,deleted_at,category:categories(id,name,slug)'
+const adminPostListColumns = 'id,title,summary,status,category_id,updated_at,published_at,deleted_at,category:categories(id,name,slug)'
 
 function selectAdminPostList(options: { count?: 'exact'; head?: boolean } = {}) {
   return getSupabase()
@@ -64,7 +64,7 @@ export type PostTagSyncStage = 'clear-existing' | 'insert-selected'
 /**
  * The post row has already been persisted when this error is raised. Keeping the
  * id on the error lets a new-post screen recover onto the edit route instead of
- * attempting a second INSERT with the same slug.
+ * attempting a second INSERT for the same newly created draft.
  */
 export class PostSavePartialError extends Error {
   readonly postId: string
@@ -279,7 +279,6 @@ export async function savePost(id: string | undefined, input: PostDraftInput): P
 
   const values = {
     title: input.title,
-    slug: input.slug,
     summary: input.summary,
     content: input.content,
     category_id: input.categoryId,

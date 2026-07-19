@@ -157,9 +157,10 @@ const publicApiPosts = JSON.parse(publicApiWarmup.body)
 assert.ok(Array.isArray(publicApiPosts) && publicApiPosts.length > 0, 'public posts API must return published DTOs')
 assert.ok(!publicApiWarmup.body.includes('published_at'), 'public posts API must not expose database column names')
 
-const publicPostSlug = publicApiPosts[0]?.slug
-assert.equal(typeof publicPostSlug, 'string', 'public posts API must include a slug')
-const publicPostApi = await request(blogUrl, `/api/public/posts/${encodeURIComponent(publicPostSlug)}`)
+const publicPostId = publicApiPosts[0]?.id
+assert.match(publicPostId ?? '', /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i, 'public posts API must include a UUID')
+assert.equal('slug' in publicApiPosts[0], false, 'public posts API must not expose a post slug')
+const publicPostApi = await request(blogUrl, `/api/public/posts/${encodeURIComponent(publicPostId)}`)
 assertStatus(publicPostApi, 200, 'public post API')
 assertStrictPublicCache(publicPostApi.response, 'public post API')
 assertIncludes(publicPostApi.body, '"navigation"', 'public post API navigation DTO')
@@ -215,7 +216,7 @@ const optimizedCover = await request(blogUrl, optimizedCoverPath)
 assertStatus(optimizedCover, 200, `${richArticle.pathname} optimized cover`)
 assertIncludes(optimizedCover.response.headers.get('content-type'), 'image/', `${richArticle.pathname} optimized cover content type`)
 
-const publicNotFound = await request(blogUrl, '/posts/production-verifier-not-found')
+const publicNotFound = await request(blogUrl, '/posts/00000000-0000-4000-8000-000000000000')
 assertStatus(publicNotFound, 404, 'public HTML not found')
 assertIncludes(publicNotFound.response.headers.get('content-type'), 'text/html', 'public 404 content type')
 assertIncludes(publicNotFound.body, '<meta name="robots" content="noindex, nofollow">', 'public 404 robots')

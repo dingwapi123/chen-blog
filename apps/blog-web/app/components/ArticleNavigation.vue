@@ -10,7 +10,7 @@ defineProps<{
 
 <template>
   <nav v-if="previous || next" class="article-navigation" aria-label="相邻文章">
-    <NuxtLink v-if="previous" class="article-navigation__link" :to="`/posts/${previous.slug}`">
+    <NuxtLink v-if="previous" class="article-navigation__link" :to="`/posts/${previous.id}`">
       <ArrowLeft :size="18" aria-hidden="true" />
       <span>
         <small>上一篇</small>
@@ -18,7 +18,7 @@ defineProps<{
       </span>
     </NuxtLink>
     <span v-else />
-    <NuxtLink v-if="next" class="article-navigation__link article-navigation__link--next" :to="`/posts/${next.slug}`">
+    <NuxtLink v-if="next" class="article-navigation__link article-navigation__link--next" :to="`/posts/${next.id}`">
       <span>
         <small>下一篇</small>
         <strong>{{ next.title }}</strong>

@@ -63,9 +63,8 @@ describe('POST publish route', () => {
   })
 
   it.each([
-    [{ title: '   ', slug: 'valid-slug', content: '# 正文' }, '文章标题'],
-    [{ title: '标题', slug: 'invalid slug', content: '# 正文' }, 'Slug'],
-    [{ title: '标题', slug: 'valid-slug', content: '\n\t' }, '文章正文'],
+    [{ title: '   ', content: '# 正文' }, '文章标题'],
+    [{ title: '标题', content: '\n\t' }, '文章正文'],
   ])('rejects invalid stored publication fields before updating: %o', async (fields, message) => {
     const from = vi.fn((table: string) => {
       expect(table).toBe('posts')
@@ -106,7 +105,6 @@ describe('POST publish route', () => {
     readMaybeSingle.mockResolvedValue({
       data: {
         title: '可发布文章',
-        slug: 'publishable-post',
         content: '# 正文',
         status: 'draft',
         updated_at: updatedAt,
@@ -136,7 +134,6 @@ describe('POST publish route', () => {
     readMaybeSingle.mockResolvedValue({
       data: {
         title: '可发布文章',
-        slug: 'publishable-post',
         content: '# 正文',
         status: 'draft',
         updated_at: '2026-07-16T00:00:00.000000+00:00',

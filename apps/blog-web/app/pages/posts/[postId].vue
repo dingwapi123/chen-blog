@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { extractArticleHeadings } from '@chen-blog/content-rules'
 import { ArrowLeft } from '@lucide/vue'
-import { formatDate } from '@chen-blog/shared-utils'
+import { formatDate, isUuid } from '@chen-blog/shared-utils'
 
 const route = useRoute()
-const postSlug = computed(() => String(route.params.postSlug))
+const postId = computed(() => String(route.params.postId))
 const { data: articleData } = await useAsyncData(
-  () => `post-${postSlug.value}`,
+  () => `post-${postId.value}`,
   async () => {
-    const page = await fetchPublishedPostPage(postSlug.value)
+    if (!isUuid(postId.value)) return { page: null, headings: [] }
+
+    const page = await fetchPublishedPostPage(postId.value)
     const headings = page ? await extractArticleHeadings(page.post.content) : []
     return { page, headings }
   },

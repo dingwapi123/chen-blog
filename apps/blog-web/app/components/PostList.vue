@@ -10,7 +10,7 @@ defineProps<{ posts: PostPreview[] }>()
     <li v-for="post in posts" :key="post.id" class="post-list__item">
       <article class="post-list__article">
         <PostMeta :post="post" />
-        <NuxtLink class="post-list__title" :to="`/posts/${post.slug}`">
+        <NuxtLink class="post-list__title" :to="`/posts/${post.id}`">
           <span>{{ post.title }}</span><ArrowUpRight :size="22" aria-hidden="true" />
         </NuxtLink>
         <p class="post-list__summary">{{ post.summary }}</p>

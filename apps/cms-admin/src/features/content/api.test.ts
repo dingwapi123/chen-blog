@@ -26,7 +26,6 @@ import {
 
 const draft: PostDraftInput = {
   title: '安全测试',
-  slug: 'security-test',
   summary: '',
   content: '<script>alert(1)</script>',
   categoryId: null,
@@ -230,7 +229,6 @@ describe('post list query', () => {
     const row = {
       id: 'post-1',
       title: 'Vue 100% 实践',
-      slug: 'vue-practice',
       summary: '',
       status: 'draft',
       category_id: 'category-1',
@@ -275,7 +273,6 @@ describe('dashboard overview', () => {
     const recentRow = {
       id: 'post-1',
       title: '最近更新',
-      slug: 'recent',
       summary: '',
       status: 'published',
       category_id: null,
