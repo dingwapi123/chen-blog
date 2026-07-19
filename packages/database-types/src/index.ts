@@ -141,7 +141,6 @@ export type Database = {
           deleted_at: string | null
           id: string
           published_at: string | null
-          slug: string | null
           status: string
           summary: string
           title: string
@@ -155,7 +154,6 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           published_at?: string | null
-          slug?: string | null
           status?: string
           summary?: string
           title: string
@@ -169,7 +167,6 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           published_at?: string | null
-          slug?: string | null
           status?: string
           summary?: string
           title?: string
