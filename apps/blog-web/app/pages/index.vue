@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ArrowDownRight, ArrowUpRight } from '@lucide/vue'
+import { fetchCategories, fetchPublishedPosts } from '~/api/public-blog'
 import { site } from '~/config/site'
 
 const { data: posts } = await useAsyncData('home-posts', fetchPublishedPosts)

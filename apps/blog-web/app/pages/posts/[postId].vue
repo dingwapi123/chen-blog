@@ -2,6 +2,7 @@
 import { extractArticleHeadings } from '@chen-blog/content-rules'
 import { ArrowLeft } from '@lucide/vue'
 import { formatDate, isUuid } from '@chen-blog/shared-utils'
+import { fetchPublishedPostPage } from '~/api/public-blog'
 
 const route = useRoute()
 const postId = computed(() => String(route.params.postId))

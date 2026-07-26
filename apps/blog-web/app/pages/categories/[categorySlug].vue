@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { fetchCategories, fetchPublishedPosts } from '~/api/public-blog'
+
 const route = useRoute()
 const categorySlug = computed(() => String(route.params.categorySlug))
 const { data: categories } = await useAsyncData('categories', fetchCategories)

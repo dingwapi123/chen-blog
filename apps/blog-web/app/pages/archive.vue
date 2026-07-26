@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowUpRight } from '@lucide/vue'
 import { formatDate } from '@chen-blog/shared-utils'
+import { fetchPublishedPosts } from '~/api/public-blog'
 
 const { data: posts } = await useAsyncData('archive-posts', fetchPublishedPosts)
 const yearGroups = computed(() => groupPostsByYear(posts.value ?? []))

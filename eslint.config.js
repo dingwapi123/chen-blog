@@ -10,6 +10,7 @@ export default tseslint.config(
       '**/.nuxt/**',
       '**/.output/**',
       '**/.netlify/**',
+      '**/.qoder/**',
       '**/dist/**',
       '**/coverage/**',
       'apps/cms-admin/components.d.ts',

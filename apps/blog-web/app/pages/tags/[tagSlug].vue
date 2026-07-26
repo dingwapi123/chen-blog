@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { fetchPublishedPosts, fetchTags } from '~/api/public-blog'
+
 const route = useRoute()
 const tagSlug = computed(() => String(route.params.tagSlug))
 const { data: tags } = await useAsyncData('tags', fetchTags)
